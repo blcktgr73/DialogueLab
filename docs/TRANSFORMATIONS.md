@@ -44,5 +44,22 @@
   - **Warm Colors**: 평가보다는 성찰에 적합한 차분한 분위기 유도.
 - **Impact (영향)**:
   - `src/components/ui/` 폴더 생성.
+  - `src/components/ui/` 폴더 생성.
   - `src/app/globals.css` 디자인 토큰 정의.
+
+## T-20251221-003 — 세션 관리 기초 (Supabase 연동)
+- **Intent (구조적 개선 목표)**: 대화 데이터를 영구적으로 저장할 수 있는 '기억 저장소'를 연결하고, 세션 생성 프로세스를 확립함.
+- **Change (변경 사항)**:
+  - Supabase 클라이언트 설정 (`utils/supabase`).
+  - `sessions` 테이블 스키마 정의 (`docs/migrations`).
+  - Next.js Server Action (`createSession`) 구현 및 홈 화면 연동.
+  - 세션 상세 페이지 (`app/sessions/[id]`) 셸 구현.
+- **Constraints (제약 사항)**:
+  - 아직 로그인 기능이 없어 익명(Anonymous) 세션 생성 허용.
+- **Decision (선택 및 근거)**:
+  - **Server Actions**: 복잡한 API Route 없이 함수 호출처럼 직관적으로 DB 작업 수행. (Form Action 패턴 활용)
+  - **@supabase/ssr**: Next.js 14+ 호환 최신 라이브러리 사용.
+- **Impact (영향)**:
+  - `.env.local` 환경변수 의존성 추가.
+  - DB 스키마 의존성 추가.
 

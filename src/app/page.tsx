@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, MessageSquare } from "lucide-react";
+import { createSession } from "@/app/actions/session";
 
 export default function Home() {
   return (
@@ -21,7 +22,9 @@ export default function Home() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center pb-6">
-          <Button>시작하기</Button>
+          <form action={createSession}>
+            <Button type="submit">시작하기</Button>
+          </form>
         </CardContent>
       </Card>
 
