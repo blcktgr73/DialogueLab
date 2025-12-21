@@ -113,7 +113,20 @@
   - **Supabase SSR Auth**: Next.js App Router와 가장 호환성이 좋은 `@supabase/ssr` 패키지 활용.
   - **Middleware**: 페이지별 인증 로직 중복 제거를 위해 미들웨어에서 일괄 처리.
 - **Impact (영향)**:
-  - `src/middleware.ts`, `src/utils/supabase/middleware.ts` 추가.
   - `src/app/login/page.tsx`, `src/app/auth/callback/route.ts` 추가.
   - DB RLS 정책 전면 수정.
+
+## T-20251221-008 — 사용자 프로필 및 내비게이션 (Profile & Nav)
+- **Intent (구조적 개선 목표)**: 사용자 정체성을 확립하고, 자연스러운 앱 탐색 경험을 제공함.
+- **Change (변경 사항)**:
+  - `profiles` 테이블 생성 (Trigger 기반 자동 동기화).
+  - 프로필 페이지(`src/app/profile`) 구현: 이름 변경, 로그아웃.
+  - 글로벌 내비게이션(`MainNav`) 추가 및 Layout 통합.
+- **Decision (선택 및 근거)**:
+  - **Upsert Pattern**: 기존 가입자의 프로필 누락 문제를 방지하기 위해 Update 대신 Upsert 사용.
+  - **Trigger**: Auth User 생성 시점과 Profile 생성 시점을 DB 레벨에서 강 결합하여 데이터 무결성 보장.
+- **Impact (영향)**:
+  - `src/app/actions/auth.ts` 추가.
+  - `src/components/main-nav.tsx` 추가.
+
 
