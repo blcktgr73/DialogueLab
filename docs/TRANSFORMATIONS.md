@@ -153,6 +153,7 @@
   - **Delete**: 세션 영구 삭제 기능 (`deleteSession`).
   - **Rename**: 세션 제목 수정 기능 (`updateSessionTitle`).
   - **Auto-Rename**: 파일 업로드 시 파일명으로 제목 자동 설정.
+  - **RLS Policy Fix**: `sessions` 테이블에 `update` 정책 추가 (`006_add_session_update_policy.sql`).
 - **Impact**:
   - `src/components/session-card.tsx` (Client Component with Menu).
   - `src/components/session-title.tsx` (Editable Header).
