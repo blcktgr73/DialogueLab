@@ -1,0 +1,46 @@
+# Conversation Practice Space (대화 연습 공간)
+
+> **"이 시스템은 더 잘 말하게 만들지 않습니다. 대신, 다음 대화를 더 깊게 만듭니다."**
+
+## 📖 프로젝트 소개
+
+**Conversation Practice Space**는 상호코칭, 동기면담(MI), 그리고 깊은 대화를 연습하는 사람들을 위한 회고 도구입니다. 대화를 평가하거나 점수를 매기는 것이 아니라, **다양한 관점(Lens)**으로 대화를 다시 바라보고 **다음 대화를 위한 실험(Practice)**을 설계하도록 돕습니다.
+
+### 핵심 철학
+- **평가보다 성찰 (Reflection over Evaluation)**: AI는 판단하지 않고 관찰하고 질문합니다.
+- **안전한 연습 (Safe Practice)**: 심리적 안전감을 최우선으로 하여, 언제든 실패하고 다시 시도할 수 있는 환경을 만듭니다.
+- **연결과 협업 (Connection)**: 파트너와 함께 대화를 회고하며 관계를 깊게 만듭니다.
+
+## 🛠 기술 스택
+
+- **Frontend**: Next.js (React), Tailwind CSS
+- **Backend**: Supabase (Auth, Database, Realtime)
+- **AI**: Google Gemini API
+- **Deployment**: Vercel
+
+## 📂 문서 구조
+
+이 프로젝트는 **Living Documentation** 원칙을 따릅니다. 모든 문서는 `docs/` 폴더 내에서 코드와 함께 진화합니다.
+
+- **[CLAUDE.md](CLAUDE.md)**: 개발 가이드라인 및 철학
+- **[PRD](docs/PRD.md)**: 제품 요구사항 (Living Spec)
+- **[User Story Map](docs/specs/USER_STORY_MAP.md)**: 사용자 여정 및 백로그 시각화
+- **[Architecture](docs/ARCHITECTURE.md)**: 시스템 아키텍처 및 변경 이력
+- **[Decisions](docs/DECISIONS.md)**: 주요 기술적 의사결정 (ADR)
+- **[Transformations](docs/TRANSFORMATIONS.md)**: 구조적 변경 기록
+
+## 🚀 시작하기
+
+(프로젝트 초기화 후 업데이트 예정)
+
+```bash
+# 설치
+npm install
+
+# 실행
+npm run dev
+```
+
+## 📝 라이선스
+
+(라이선스 정보 추가 예정)
