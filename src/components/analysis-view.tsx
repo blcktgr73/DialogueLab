@@ -1,50 +1,81 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { MitiDashboard } from "@/components/miti-dashboard"
+import { PracticeCardList, PracticeCardData } from "@/components/practice-card"
 
-export type AnalysisResultContent = {
-    summary: string
-    key_points: { title: string, description: string }[]
-    sentiment: string
-    reflection_question: string
+export interface AnalysisResultContent {
+    summary: string;
+    key_points: { title: string; description: string }[];
+    sentiment: string;
+    reflection_question: string;
+    // MITI Structure (Optional)
+    speakers?: Record<string, any>;
+    practice_cards?: PracticeCardData[];
 }
 
 export function AnalysisView({ content }: { content: AnalysisResultContent }) {
-    if (!content) return null
+    // Detect if this is a MITI Result
+    if (content.speakers) {
+        return (
+            <div className="space-y-8 animate-fade-in-up">
+                <MitiDashboard speakers={content.speakers} />
 
-    return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Card className="bg-primary/5 border-primary/20">
-                <CardHeader className="pb-2">
-                    <Badge variant="outline" className="w-fit mb-2 bg-background">AI 성찰 분석</Badge>
-                    <CardTitle className="text-lg">요약</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm leading-relaxed">{content.summary}</p>
-                </CardContent>
-            </Card>
-
-            <div className="space-y-3">
-                <h3 className="font-semibold text-sm text-muted-foreground px-1">주요 관찰 포인트</h3>
-                {content.key_points.map((point, i) => (
-                    <Card key={i} className="overflow-hidden">
-                        <div className="h-1 w-full bg-gradient-to-r from-primary/40 to-primary/10" />
-                        <CardHeader className="py-3">
-                            <CardTitle className="text-base">{point.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="py-0 pb-4 text-sm text-muted-foreground">
-                            {point.description}
-                        </CardContent>
-                    </Card>
-                ))}
+                {content.practice_cards && content.practice_cards.length > 0 && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-bold tracking-tight">연습 카드 (Practice Cards)</h3>
+                            <Badge variant="secondary">Interactive</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            아쉬웠던 순간을 다시 연습해보세요. 카드를 클릭하면 전문가의 조언을 볼 수 있습니다.
+                        </p>
+                        <PracticeCardList cards={content.practice_cards} />
+                    </div>
+                )}
             </div>
+        )
+    }
 
-            <Card className="bg-secondary/30 border-none">
-                <CardContent className="p-6 text-center space-y-2">
-                    <span className="text-2xl">🤔</span>
-                    <h3 className="font-semibold">성찰 질문</h3>
-                    <p className="text-sm text-muted-foreground italic">
-                        "{content.reflection_question}"
-                    </p>
+    // Standard Analysis View
+    return (
+        <div className="space-y-8 animate-fade-in-up">
+            <Card>
+                <CardHeader>
+                    <CardTitle>분석 결과 요약</CardTitle>
+                    <CardDescription>대화 내용에 대한 전반적인 분석 결과입니다.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">요약 (Summary)</h3>
+                        <p className="text-muted-foreground">{content.summary}</p>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">핵심 포인트 (Key Points)</h3>
+                        <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                            {content.key_points.map((point, index) => (
+                                <li key={index}>
+                                    <strong>{point.title}:</strong> {point.description}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">감정 (Sentiment)</h3>
+                        <Badge variant="outline">{content.sentiment}</Badge>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">성찰 질문 (Reflection Question)</h3>
+                        <p className="text-muted-foreground">{content.reflection_question}</p>
+                    </div>
                 </CardContent>
             </Card>
         </div>

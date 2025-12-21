@@ -171,4 +171,15 @@
   - `src/app/actions/transcript.ts`
   - `src/lib/parsers.ts`
 
+## T-20251221-013 — MITI 기반 평가 및 연습 카드 (MITI Evaluation)
+- **Intent**: 동기면담(MITI 4.2) 표준에 기반한 전문적 상담 역량 평가 및 학습 기능 제공.
+- **Change**:
+  - **Spec**: `Docs/specs/MITI_EVALUATION_DESIGN.md` (Symmetric Evaluation Design).
+  - **Schema**: `analysis_results` 테이블의 `lens` 컬럼에 'miti' 타입 추가.
+  - **Feature**: 양방향(상담자/내담자) 평가, 행동 빈도 분석, 연습 카드(Practice Card) 생성.
+- **Impact**:
+  - `src/app/actions/analysis.ts`
+  - `src/components/analysis-view.tsx`
+  - `src/lib/gemini.ts`
+
 

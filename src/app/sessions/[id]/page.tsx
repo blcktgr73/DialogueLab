@@ -4,7 +4,7 @@ import { TranscriptView } from '@/components/transcript-view'
 import { TranscriptUploader } from '@/components/transcript-uploader'
 import { AnalysisView, AnalysisResultContent } from '@/components/analysis-view'
 import { analyzeSession } from '@/app/actions/analysis'
-import { AnalyzeButton } from '@/components/analyze-button'
+import { AnalyzeAction } from '@/components/analyze-button'
 import { SessionTitle } from '@/components/session-title'
 
 
@@ -55,12 +55,7 @@ export default async function SessionPage({
                 </div>
 
                 {/* Analyze Action */}
-                <form action={async () => {
-                    'use server'
-                    await analyzeSession(id, 'empathy') // Default lens for now
-                }}>
-                    <AnalyzeButton />
-                </form>
+                <AnalyzeAction sessionId={id} />
             </div>
 
             {/* Analysis Section */}
