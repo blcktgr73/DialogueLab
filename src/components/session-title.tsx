@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { updateSessionTitle } from '@/app/actions/session'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,9 +13,14 @@ interface SessionTitleProps {
 }
 
 export function SessionTitle({ sessionId, initialTitle }: SessionTitleProps) {
+    const router = useRouter()
     const [isEditing, setIsEditing] = useState(false)
     const [title, setTitle] = useState(initialTitle || '제목 없는 세션')
     const [isLoading, setIsLoading] = useState(false)
+
+    useEffect(() => {
+        setTitle(initialTitle || '제목 없는 세션')
+    }, [initialTitle])
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -24,6 +30,7 @@ export function SessionTitle({ sessionId, initialTitle }: SessionTitleProps) {
         try {
             await updateSessionTitle(sessionId, title)
             setIsEditing(false)
+            router.refresh()
         } catch (error) {
             alert('제목 수정 실패')
         } finally {

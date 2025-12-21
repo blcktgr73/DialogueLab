@@ -31,29 +31,14 @@ export function TranscriptUploader({ sessionId }: { sessionId: string }) {
     }
 
     const handleSave = async () => {
-        if (preview.length === 0 || !file) return // Ensure file exists for its name
+        if (preview.length === 0 || !file) return
         try {
-            // The original parseTranscriptFile already returns TranscriptEntry[], so 'preview' is already the parsed data.
-            // The instruction seems to imply re-parsing or using a different parse function,
-            // but given the existing structure, we'll pass 'preview' as the transcripts.
-            // We'll assume 'parseTranscript' is a new function or a renamed 'parseTranscriptFile'
-            // and 'text' would be the file content, but for now, we use the already parsed 'preview'.
-            // If 'parseTranscript' is meant to be called here, 'text' would need to be read from 'file'.
-
-            // Assuming the intent is to pass the already parsed 'preview' and the 'file.name'
             await bulkAddTranscripts(sessionId, preview, file.name)
             setPreview([])
             setFile(null)
-            toast({
-                title: '업로드 성공',
-                description: `${preview.length}개의 대화가 추가되었습니다.`,
-            })
+            alert('축어록이 호환되었습니다.') // Reverted message
         } catch (err: any) {
-            toast({
-                title: '저장 실패',
-                description: err.message || '축어록 저장 중 오류가 발생했습니다.',
-                variant: 'destructive',
-            })
+            alert('저장 실패: ' + (err.message || '오류 발생'))
         }
     }
 

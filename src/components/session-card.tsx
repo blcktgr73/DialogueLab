@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,9 +22,15 @@ interface SessionCardProps {
 }
 
 export function SessionCard({ session }: SessionCardProps) {
+    const router = useRouter()
     const [isEditing, setIsEditing] = useState(false)
     const [title, setTitle] = useState(session.title || '제목 없는 세션')
     const [isLoading, setIsLoading] = useState(false)
+
+    // Sync state if prop changes (e.g. from router.refresh)
+    useEffect(() => {
+        setTitle(session.title || '제목 없는 세션')
+    }, [session.title])
 
     const handleDelete = async (e: React.MouseEvent) => {
         e.preventDefault() // Prevent navigation
@@ -31,6 +38,7 @@ export function SessionCard({ session }: SessionCardProps) {
 
         try {
             await deleteSession(session.id)
+            router.refresh()
         } catch (error) {
             alert('삭제 실패했습니다.')
         }
@@ -44,6 +52,7 @@ export function SessionCard({ session }: SessionCardProps) {
         try {
             await updateSessionTitle(session.id, title)
             setIsEditing(false)
+            router.refresh() // Force server data refresh
         } catch (error) {
             alert('수정 실패했습니다.')
         } finally {
@@ -61,9 +70,10 @@ export function SessionCard({ session }: SessionCardProps) {
                             onChange={(e) => setTitle(e.target.value)}
                             disabled={isLoading}
                             autoFocus
+                            onClick={(e) => e.preventDefault()} // Prevent clicking through to link if needed, though form handles it
                         />
-                        <Button type="submit" size="sm" disabled={isLoading}>저장</Button>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)} disabled={isLoading}>취소</Button>
+                        <Button type="submit" size="sm" disabled={isLoading} onClick={(e) => e.stopPropagation()}>저장</Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditing(false); }} disabled={isLoading}>취소</Button>
                     </form>
                 </CardContent>
             </Card>
@@ -78,7 +88,7 @@ export function SessionCard({ session }: SessionCardProps) {
                         <MessageSquare className="w-5 h-5 text-muted-foreground" />
                         <div className="flex flex-col">
                             <span className="font-medium group-hover:text-primary transition-colors">
-                                {session.title || '제목 없는 세션'}
+                                {title}
                             </span>
                             <span className="text-xs text-muted-foreground block">
                                 {formatDistanceToNow(new Date(session.created_at), { addSuffix: true, locale: ko })}

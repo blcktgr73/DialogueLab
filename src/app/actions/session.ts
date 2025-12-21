@@ -62,15 +62,20 @@ export async function updateSessionTitle(sessionId: string, newTitle: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('sessions')
         .update({ title: newTitle })
         .eq('id', sessionId)
         .eq('user_id', user.id)
+        .select()
 
     if (error) {
         console.error('Error updating session title:', error)
         throw new Error('세션 제목 수정 실패')
+    }
+
+    if (!data || data.length === 0) {
+        throw new Error('권한이 없거나 세션을 찾을 수 없습니다.')
     }
 
     revalidatePath('/')
