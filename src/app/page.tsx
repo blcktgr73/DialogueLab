@@ -2,15 +2,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, MessageSquare } from "lucide-react";
 import { createSession } from "@/app/actions/session";
+import { SessionCard } from "@/components/session-card";
 
-export default function Home() {
+import Link from "next/link";
+import { createClient } from "@/utils/supabase/server";
+import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let sessions: any[] = [];
+  if (user) {
+    const { data } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    sessions = data || [];
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center space-y-8 py-12">
+    <div className="flex flex-col items-center space-y-8 py-12">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">안녕하세요, 연습자님.</h2>
+        <h2 className="text-2xl font-bold tracking-tight">안녕하세요{user ? ', 연습자님' : ''}.</h2>
         <p className="text-muted-foreground">오늘도 대화의 깊이를 더해볼까요?</p>
       </div>
 
+      {/* Start New Session Card */}
       <Card className="w-full max-w-sm border-dashed shadow-sm hover:shadow-md transition-shadow cursor-pointer group bg-card/50">
         <CardHeader className="text-center pb-2">
           <div className="mx-auto bg-primary/10 p-3 rounded-full mb-2 group-hover:bg-primary/20 transition-colors">
@@ -28,20 +48,21 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-        <Card className="hover:bg-accent/50 transition-colors cursor-pointer border-none shadow-none bg-secondary/50">
-          <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-            <MessageSquare className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-medium">지난 기록 보기</span>
-          </CardContent>
-        </Card>
-        <Card className="hover:bg-accent/50 transition-colors cursor-pointer border-none shadow-none bg-secondary/50">
-          <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-            <span className="text-xl">📊</span>
-            <span className="text-sm font-medium">나의 성장 (준비중)</span>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Session List */}
+      {user && sessions.length > 0 && (
+        <div className="w-full max-w-screen-sm space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="font-semibold text-lg">최근 대화 기록</h3>
+            <span className="text-xs text-muted-foreground">{sessions.length}개의 세션</span>
+          </div>
+
+          <div className="grid gap-3">
+            {sessions.map((session) => (
+              <SessionCard key={session.id} session={session} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

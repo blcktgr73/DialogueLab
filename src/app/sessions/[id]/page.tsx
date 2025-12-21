@@ -5,6 +5,7 @@ import { TranscriptUploader } from '@/components/transcript-uploader'
 import { AnalysisView, AnalysisResultContent } from '@/components/analysis-view'
 import { analyzeSession } from '@/app/actions/analysis'
 import { AnalyzeButton } from '@/components/analyze-button'
+import { SessionTitle } from '@/components/session-title'
 
 
 export default async function SessionPage({
@@ -46,8 +47,8 @@ export default async function SessionPage({
         <div className="space-y-8 pb-40">
             <div className="border-b pb-4 sticky top-0 bg-card/95 backdrop-blur z-10 pt-2 flex justify-between items-start">
                 <div>
-                    <h1 className="text-xl font-bold tracking-tight">{session.title}</h1>
-                    <p className="text-muted-foreground text-xs">
+                    <SessionTitle sessionId={id} initialTitle={session.title} />
+                    <p className="text-muted-foreground text-xs mt-1">
                         {new Date(session.created_at).toISOString().split('T')[0]} • {session.mode}
                     </p>
                 </div>

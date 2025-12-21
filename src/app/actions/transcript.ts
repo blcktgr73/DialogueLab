@@ -26,9 +26,28 @@ export async function addTranscript(sessionId: string, formData: FormData) {
     revalidatePath(`/sessions/${sessionId}`)
 }
 
-export async function bulkAddTranscripts(sessionId: string, transcripts: { speaker: string, content: string, timestamp?: string }[]) {
+export async function bulkAddTranscripts(sessionId: string, transcripts: { speaker: string, content: string, timestamp?: string }[], fileName?: string) {
     const supabase = await createClient()
 
+    // 1. Check if we should auto-rename the session
+    if (fileName) {
+        const { data: session } = await supabase
+            .from('sessions')
+            .select('title')
+            .eq('id', sessionId)
+            .single()
+
+        if (session && session.title === '새로운 대화 세션') {
+            // Remove extension if present (e.g., "my_log.txt" -> "my_log")
+            const newTitle = fileName.replace(/\.[^/.]+$/, "")
+            await supabase
+                .from('sessions')
+                .update({ title: newTitle })
+                .eq('id', sessionId)
+        }
+    }
+
+    // 2. Insert Transcripts
     // Map to simple integer timestamp if possible, or just standard 0 for now.
     // Future: Parse "00:01:23" to seconds.
 

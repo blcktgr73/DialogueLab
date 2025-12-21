@@ -140,4 +140,22 @@
   - `src/app/actions/session.ts` 수정.
   - Production URL 생성 (예: `dialogue-lab.vercel.app`).
 
+## T-20251221-010 — 세션 대시보드 (Session Dashboard)
+- **Intent**: 홈 화면에서 과거의 대화 기록을 쉽게 찾아보고 접근할 수 있도록 함.
+- **Change**:
+  - `page.tsx`: Server Component로 변환하여 세션 목록 Fetching.
+  - `SessionCard`: 목록 UI 컴포넌트화.
+  - `date-fns` 도입: 날짜 표기 개선 ("3일 전").
+
+## T-20251221-011 — 세션 관리 기능 강화 (Management)
+- **Intent**: 세션 이름을 직관적으로 관리하고, 불필요한 세션을 정리할 수 있게 함.
+- **Change**:
+  - **Delete**: 세션 영구 삭제 기능 (`deleteSession`).
+  - **Rename**: 세션 제목 수정 기능 (`updateSessionTitle`).
+  - **Auto-Rename**: 파일 업로드 시 파일명으로 제목 자동 설정.
+- **Impact**:
+  - `src/components/session-card.tsx` (Client Component with Menu).
+  - `src/components/session-title.tsx` (Editable Header).
+  - `src/app/actions/transcript.ts` 수정.
+
 
