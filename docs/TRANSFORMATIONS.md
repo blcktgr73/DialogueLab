@@ -84,6 +84,24 @@
   - `xlsx` 라이브러리 도입 (Excel/CSV 파싱).
   - `TranscriptUploader` 컴포넌트 구현 (파일 선택 -> 파싱 -> 미리보기 -> 저장).
   - `bulkAddTranscripts` Server Action 구현 (Batch Insert).
+
+## T-20251221-006 — Lens 성찰 기능 (AI Reflection)
+- **Intent (구조적 개선 목표)**: 축어록 데이터를 단순 조회하는 것을 넘어, AI를 통해 제3자의 관점(Lens)에서 분석된 통찰을 제공.
+- **Change (변경 사항)**:
+  - `analysis_results` 테이블 생성 (JSONB).
+  - `gemini.ts` 유틸리티 구현 (Google Generative AI + Dirty JSON Parsing Pattern).
+  - `analyzeSession` Server Action 및 `AnalysisView` UI 구현.
+  - **Prompt Engineering**: 한국어 응답 강제 (`Respond in KOREAN`).
+  - **UX**: `AnalyzeButton` (Client Component) 도입으로 Loading State 시각화.
+- **Constraints (제약 사항)**:
+  - AI 응답 속도 고려 (수 초 소요됨) -> Server Action + Streaming UI(추후 보완) 또는 Loading State.
+  - JSON 응답의 불안정성 -> `AI_JSON_PARSING_PATTERN.md`의 복구 로직 적용.
+- **Decision (선택 및 근거)**:
+  - **Gemini 1.5 Flash**: 빠르고 비용 효율적이므로 실시간성이 중요한 성찰 기능에 적합.
+  - **Robust Parsing**: AI가 마크다운을 섞거나 JSON 형식을 어기는 경우를 대비하여, 클라이언트 사이드가 아닌 서버 유틸리티 레벨에서 파싱/복구를 수행.
+- **Impact (영향)**:
+  - `lib/gemini.ts` 추가.
+  - `components/analysis-view.tsx` 추가.
 - **Constraints (제약 사항)**:
   - 파일 파싱은 클라이언트 사이드(Browser)에서 수행하여 서버 부하 경감.
   - Clova Note 등 특정 포맷(헤더 감지)에 대한 휴리스틱 적용.
