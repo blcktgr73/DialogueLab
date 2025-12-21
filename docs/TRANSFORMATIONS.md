@@ -159,4 +159,16 @@
   - `src/components/session-title.tsx` (Editable Header).
   - `src/app/actions/transcript.ts` 수정.
 
+## T-20251221-012 — 화자 이름 변경 및 정렬 보정 (Speaker Renaming)
+- **Intent**: 대화 기록에서 잘못된 화자 이름을 수정하고, 대량 업로드 시 순서 섞임을 방지함.
+- **Change**:
+  - **Speaker Rename**: `updateSpeaker` 구현 (Session ID + Old Name 기준 일괄 변경).
+  - **Interactive UI**: `TranscriptView`에서 이름 클릭 시 수정 모드 전환.
+  - **Sorting Fix**: `transcript_index` 컬럼 추가하여 업로드 순서 보장.
+  - **Stability**: 파일 파싱 시 공백 제거(Trim), UI 동기화(useEffect, router.refresh) 강화.
+- **Impact**:
+  - `src/components/transcript-view.tsx`
+  - `src/app/actions/transcript.ts`
+  - `src/lib/parsers.ts`
+
 

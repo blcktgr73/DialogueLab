@@ -33,6 +33,7 @@ export default async function SessionPage({
         .select('*')
         .eq('session_id', id)
         .order('created_at', { ascending: true })
+        .order('transcript_index', { ascending: true })
 
     // Fetch latest analysis
     const { data: analysis } = await supabase
@@ -72,7 +73,7 @@ export default async function SessionPage({
 
             {/* Transcript Section */}
             <h3 className="font-semibold text-sm text-muted-foreground mb-2">대화 내용 ({transcripts?.length || 0})</h3>
-            <TranscriptView transcripts={transcripts || []} />
+            <TranscriptView transcripts={transcripts || []} sessionId={id} />
 
             {/* File Uploader */}
             <div className="fixed bottom-0 left-0 right-0 z-20">

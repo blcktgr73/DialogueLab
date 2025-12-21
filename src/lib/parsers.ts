@@ -31,9 +31,11 @@ async function parseTxt(file: File): Promise<TranscriptEntry[]> {
         // Simple regex: Capture everything before first colon as speaker
         const match = trimmed.match(/^([^:]+):(.+)$/);
         if (match) {
+            const speaker = match[1].trim();
+            const content = match[2].trim().trim();
             entries.push({
-                speaker: match[1].trim(),
-                content: match[2].trim(),
+                speaker: speaker,
+                content: content,
                 timestamp: undefined // TXT parsing usually lacks reliable timestamp unless standard format
             });
         } else {

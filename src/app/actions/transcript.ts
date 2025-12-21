@@ -51,11 +51,12 @@ export async function bulkAddTranscripts(sessionId: string, transcripts: { speak
     // Map to simple integer timestamp if possible, or just standard 0 for now.
     // Future: Parse "00:01:23" to seconds.
 
-    const rows = transcripts.map(t => ({
+    const rows = transcripts.map((t, index) => ({
         session_id: sessionId,
         speaker: t.speaker,
         content: t.content,
-        timestamp: 0 // Placeholder logic for now
+        timestamp: 0, // Placeholder logic for now
+        transcript_index: index
     }))
 
     const { error } = await supabase
@@ -65,6 +66,24 @@ export async function bulkAddTranscripts(sessionId: string, transcripts: { speak
     if (error) {
         console.error('Error adding transcripts:', error)
         throw new Error('축어록 일괄 추가 실패')
+    }
+
+    revalidatePath(`/sessions/${sessionId}`)
+}
+
+export async function updateSpeaker(sessionId: string, oldName: string, newName: string) {
+    const supabase = await createClient()
+
+    // Bulk update: Update all transcripts in this session where speaker is oldName
+    const { error } = await supabase
+        .from('transcripts')
+        .update({ speaker: newName })
+        .eq('session_id', sessionId)
+        .eq('speaker', oldName)
+
+    if (error) {
+        console.error('Error updating speaker:', error)
+        throw new Error('화자 이름 수정 실패')
     }
 
     revalidatePath(`/sessions/${sessionId}`)
