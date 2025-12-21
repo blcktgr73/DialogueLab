@@ -3,7 +3,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 
-export async function createSession(title?: string, mode?: string) {
+export async function createSession(formData?: FormData) {
+    const title = formData?.get('title') as string
+    const mode = formData?.get('mode') as string
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
