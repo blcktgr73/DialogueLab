@@ -102,12 +102,18 @@
 - **Impact (영향)**:
   - `lib/gemini.ts` 추가.
   - `components/analysis-view.tsx` 추가.
-- **Constraints (제약 사항)**:
-  - 파일 파싱은 클라이언트 사이드(Browser)에서 수행하여 서버 부하 경감.
-  - Clova Note 등 특정 포맷(헤더 감지)에 대한 휴리스틱 적용.
+
+## T-20251221-007 — 사용자 인증 및 보안 강화 (Auth & Security)
+- **Intent (구조적 개선 목표)**: 데모 수준의 익명 접근을 차단하고, 사용자별 데이터 격리(Isolation)를 통해 개인화된 서비스를 제공함.
+- **Change (변경 사항)**:
+  - `middleware.ts` 도입 (세션체크 및 리다이렉트).
+  - `/login` 페이지 및 Google OAuth 연동.
+  - **RLS 강화**: `anon` 정책 제거 -> `authenticated` 및 `user_id` 기반 소유권 검증 정책 적용.
 - **Decision (선택 및 근거)**:
-  - **SheetJS (xlsx)**: 가장 범용적인 JS 엑셀 라이브러리. (Client Side Execution)
-  - **Bulk Insert**: 건건이 통신하지 않고 파싱된 JSON을 한 번에 전송하여 성능 최적화.
+  - **Supabase SSR Auth**: Next.js App Router와 가장 호환성이 좋은 `@supabase/ssr` 패키지 활용.
+  - **Middleware**: 페이지별 인증 로직 중복 제거를 위해 미들웨어에서 일괄 처리.
 - **Impact (영향)**:
-  - `src/lib/parsers.ts` 유틸리티 추가.
+  - `src/middleware.ts`, `src/utils/supabase/middleware.ts` 추가.
+  - `src/app/login/page.tsx`, `src/app/auth/callback/route.ts` 추가.
+  - DB RLS 정책 전면 수정.
 
