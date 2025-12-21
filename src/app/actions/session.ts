@@ -3,13 +3,23 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 
-export async function createSession() {
+export async function createSession(title?: string, mode?: string) {
     const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error('User is not authenticated')
+    }
 
     const { data, error } = await supabase
         .from('sessions')
         .insert([
-            { title: '새로운 대화 세션', mode: 'free' } // Default values
+            {
+                title: title || '새로운 대화 세션',
+                mode: mode || 'free',
+                user_id: user.id
+            }
         ])
         .select()
         .single()
