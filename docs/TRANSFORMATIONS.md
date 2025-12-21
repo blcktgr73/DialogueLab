@@ -63,3 +63,33 @@
   - `.env.local` 환경변수 의존성 추가.
   - DB 스키마 의존성 추가.
 
+## T-20251221-004 — 축어록(Transcript) 기능 구현
+- **Intent (구조적 개선 목표)**: 대화의 핵심 콘텐츠인 '말(Speech)'을 시각화하고, 데이터베이스에 저장할 수 있는 구조 마련.
+- **Change (변경 사항)**:
+  - `transcripts` 테이블 생성 (`session_id` FK).
+  - `TranscriptView` 컴포넌트 구현 (나/상대방 말풍선 스타일링).
+  - 세션 상세 페이지에 축어록 조회 및 수동 입력 폼 추가.
+- **Constraints (제약 사항)**:
+  - 아직 AI 음성 인식(STT)이 없으므로 텍스트 수동 입력을 통해 기능 검증.
+- **Decision (선택 및 근거)**:
+  - **Single Table**: 발화자(speaker) 컬럼을 통해 단순하게 데이터 관리.
+  - **Optimistic UI (보류)**: 현재는 Server Action 후 `revalidatePath`로 단순 새로고침 처리.
+- **Impact (영향)**:
+  - `components/transcript-view.tsx` 추가.
+  - `actions/transcript.ts` 추가.
+
+## T-20251221-005 — 축어록 파일 업로드 (File Ingestion)
+- **Intent (구조적 개선 목표)**: 외부 툴(Zoom, Clova Note 등)에서 생성된 대화 기록을 손쉽게 Import하여 분석 준비 단계를 단축함.
+- **Change (변경 사항)**:
+  - `xlsx` 라이브러리 도입 (Excel/CSV 파싱).
+  - `TranscriptUploader` 컴포넌트 구현 (파일 선택 -> 파싱 -> 미리보기 -> 저장).
+  - `bulkAddTranscripts` Server Action 구현 (Batch Insert).
+- **Constraints (제약 사항)**:
+  - 파일 파싱은 클라이언트 사이드(Browser)에서 수행하여 서버 부하 경감.
+  - Clova Note 등 특정 포맷(헤더 감지)에 대한 휴리스틱 적용.
+- **Decision (선택 및 근거)**:
+  - **SheetJS (xlsx)**: 가장 범용적인 JS 엑셀 라이브러리. (Client Side Execution)
+  - **Bulk Insert**: 건건이 통신하지 않고 파싱된 JSON을 한 번에 전송하여 성능 최적화.
+- **Impact (영향)**:
+  - `src/lib/parsers.ts` 유틸리티 추가.
+

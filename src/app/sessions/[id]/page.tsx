@@ -1,5 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
+import { TranscriptView } from '@/components/transcript-view'
+import { TranscriptUploader } from '@/components/transcript-uploader'
 
 export default async function SessionPage({
     params,
@@ -9,27 +11,40 @@ export default async function SessionPage({
     const { id } = await params
     const supabase = await createClient()
 
-    const { data: session, error } = await supabase
+    // Fetch session
+    const { data: session } = await supabase
         .from('sessions')
         .select('*')
         .eq('id', id)
         .single()
 
-    if (error || !session) {
+    if (!session) {
         notFound()
     }
 
+    // Fetch transcripts
+    const { data: transcripts } = await supabase
+        .from('transcripts')
+        .select('*')
+        .eq('session_id', id)
+        .order('created_at', { ascending: true })
+
     return (
-        <div className="space-y-6">
-            <div className="border-b pb-4">
-                <h1 className="text-2xl font-bold tracking-tight">{session.title}</h1>
-                <p className="text-muted-foreground text-sm">
-                    {new Date(session.created_at).toLocaleString()} • {session.mode} mode
+        <div className="space-y-6 pb-40"> {/* pb increased for upload area */}
+            <div className="border-b pb-4 sticky top-0 bg-card/95 backdrop-blur z-10 pt-2">
+                <h1 className="text-xl font-bold tracking-tight">{session.title}</h1>
+                <p className="text-muted-foreground text-xs">
+                    {new Date(session.created_at).toLocaleString()} • {session.mode}
                 </p>
             </div>
 
-            <div className="p-8 border border-dashed rounded-lg bg-muted/20 text-center text-muted-foreground">
-                대화 내용을 이곳에 표시할 예정입니다.
+            <TranscriptView transcripts={transcripts || []} />
+
+            {/* File Uploader */}
+            <div className="fixed bottom-0 left-0 right-0 z-20">
+                <div className="w-full max-w-screen-md mx-auto bg-background shadow-lg border-t">
+                    <TranscriptUploader sessionId={id} />
+                </div>
             </div>
         </div>
     )
