@@ -129,4 +129,15 @@
   - `src/app/actions/auth.ts` 추가.
   - `src/components/main-nav.tsx` 추가.
 
+## T-20251221-009 — Vercel 배포 (Deployment)
+- **Intent (구조적 개선 목표)**: 로컬 호스트를 벗어나 실제 사용자가 접근 가능한 퍼블릭 환경으로 서비스를 런칭함.
+- **Change (변경 사항)**:
+  - Vercel 프로젝트 연동 및 환경변수(`ENV`) 설정.
+  - OAuth 인증을 위한 Redirect URL 등록 (Supabase, Google Cloud).
+  - RLS 에러 (`42501`) 수정을 위한 `createSession` Server Action 보완 (Explicit `user_id`).
+- **Impact (영향)**:
+  - `docs/guides/DEPLOYMENT_CHECKLIST.md` 추가.
+  - `src/app/actions/session.ts` 수정.
+  - Production URL 생성 (예: `dialogue-lab.vercel.app`).
+
 
