@@ -5,16 +5,20 @@ Transformation 단위로 자동 진화합니다.
 
 ### 우선순위 조정 (Prioritized)
 
-- [ ] **Home: Session Dashboard** (UI Polish)
-  - 저장된 세션 목록을 홈 화면에서 볼 수 있어야 함. (현재는 '지난 기록 보기'가 더미임)
-  - 날짜별/최근 순 정렬.
+- [ ] **Data Security & Privacy Audit**
+  - 현재 이메일 검색이 너무 개방적임 (2글자 이상이면 검색).
+  - 정확한 이메일 매칭이나 닉네임 검색으로 제한하는 강화된 로직 필요.
 
-- [ ] **Practice: MITI 기반 평가 및 연습 카드** (Insight)
-  - 단순 AI 성찰을 넘어, 동기면담(Motivational Interviewing) 평가 지표(MITI)를 적용.
-  - 평가 결과를 기반으로 구체적인 "대화 연습 카드" 생성.
+- [ ] **Real-time Updates**
+  - Supabase Realtime을 사용하여 새 참가자가 들어오거나 세션 내용이 변경될 때 화면 자동 갱신.
 
-### 일정 미정 (Unscheduled)
+### 완료됨 (Completed)
 
-- [ ] **Collaboration: 대화 상대 변경 및 초대**
-  - 단일 세션 내에서 대화 상대를 변경하거나,
-  - 외부 링크/검색을 통해 다른 사용자를 세션에 초대(Observer/Partner)하는 기능.
+- [x] **Home: Session Dashboard** (UI Polish)
+- [x] **Practice: MITI 기반 평가 및 연습 카드** (Insight)
+- [x] **Collaboration: 대화 상대 변경 및 초대**
+
+### 일정 미정 (Unscheduled / Future Ideas)
+
+- [ ] **Public Invitation Link**: 검색 없이 링크 공유만으로 세션 참여.
+- [ ] **Role-based Access Control (RBAC) UI**: Editor/Viewer 권한을 UI에서 변경.

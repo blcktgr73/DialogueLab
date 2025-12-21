@@ -3,10 +3,7 @@ import { notFound } from 'next/navigation'
 import { TranscriptView } from '@/components/transcript-view'
 import { TranscriptUploader } from '@/components/transcript-uploader'
 import { AnalysisView, AnalysisResultContent } from '@/components/analysis-view'
-import { analyzeSession } from '@/app/actions/analysis'
-import { AnalyzeAction } from '@/components/analyze-button'
-import { SessionTitle } from '@/components/session-title'
-
+import { SessionHeader } from '@/components/session-header'
 
 export default async function SessionPage({
     params,
@@ -46,17 +43,13 @@ export default async function SessionPage({
 
     return (
         <div className="space-y-8 pb-40">
-            <div className="border-b pb-4 sticky top-0 bg-card/95 backdrop-blur z-10 pt-2 flex justify-between items-start">
-                <div>
-                    <SessionTitle sessionId={id} initialTitle={session.title} />
-                    <p className="text-muted-foreground text-xs mt-1">
-                        {new Date(session.created_at).toISOString().split('T')[0]} • {session.mode}
-                    </p>
-                </div>
-
-                {/* Analyze Action */}
-                <AnalyzeAction sessionId={id} />
-            </div>
+            {/* Header with Title, Collab, Analyze */}
+            <SessionHeader
+                sessionId={id}
+                initialTitle={session.title}
+                createdAt={session.created_at}
+                mode={session.mode}
+            />
 
             {/* Analysis Section */}
             {analysis && (
