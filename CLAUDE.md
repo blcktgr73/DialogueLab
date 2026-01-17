@@ -23,7 +23,7 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 2. **Define Transformation**: Specify **'one small structural change'**. (Which part's life will be enhanced?)
 3. **Propose Design Options**: Present 2-3 alternatives with **trade-offs and structural impacts**.
 4. **Generate/Modify Code**: Present in small PR (diff) units.
-5. **Context Preservation Verification**: Check **structural quality metrics** (cohesion/coupling), API compatibility, performance/security, i18n, test coverage.
+5. **Context Preservation Verification**: Check **structural quality metrics** (cohesion/coupling), API compatibility, performance/security, i18n, test coverage (Unit/E2E via Playwright).
 6. **Update Documentation**: Synchronize Living PRD, Backlog, and Transformation Log.
 7. **Suggest Follow-up Transformations**: Propose 1-3 next step candidates.
 
@@ -49,11 +49,12 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 
 * **PRD.md**: Project vision, key stories, constraints, open questions. (Living PRD)
 * **TRANSFORMATIONS.md**: Transformation records (Intent, Change, Constraints, Options, Acceptance, Impact, Follow-ups).
-* **BACKLOG.md**: Auto-evolves in Transformation units.
+* **Docs/specs/user-stories/**: Hierarchical user story management directory.
+    * **index.md**: Central dashboard for Themes and Epics.
+    * **GOVERNANCE.md**: ID naming conventions and stewardship policy.
 * **DECISIONS.md**: Key design decisions and rationale.
 * **ARCHITECTURE.md**: Code/module structure and change history.
 * **USER_STORY_MAP.md**: Overview of all user stories by activity and release. (Docs/specs/)
-* **USER_STORIES.md**: Detailed acceptance criteria for each story. (Docs/specs/)
 
 ---
 
@@ -61,7 +62,8 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 
 ### Core Documents
 - **USER_STORY_MAP.md** (`Docs/specs/`): Visual overview of all stories by user activity and release
-- **USER_STORIES.md** (`Docs/specs/`): Detailed acceptance criteria for each story
+- **user-stories/index.md** (`Docs/specs/user-stories/`): Hierarchical dashboard of Themes and Epics
+- **Domain Files** (e.g., `01_core_infra.md`): Detailed acceptance criteria for each story
 
 ### Development Process
 
@@ -79,9 +81,9 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 ```
 
 ### Adding New User Stories
-- **ID**: Use next sequential number (e.g., US-039)
-- **Location**: Add to USER_STORY_MAP.md first, then USER_STORIES.md
-- **Release**: Place in appropriate release column
+- **ID**: Use next sequential number for stories (US-XXX), Epics (EPIC-XX), or Themes (THEME-XX)
+- **Location**: Define in `index.md` first, then add to the appropriate domain file
+- **Governance**: Follow `Docs/specs/user-stories/GOVERNANCE.md`
 - **Status**: Initial status is ⏳ (Planned)
 
 ### Cancelling Stories
@@ -96,7 +98,7 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 ### Relationship with Transformations
 - Each Transformation can implement one or more Acceptance Criteria
 - Link format in TRANSFORMATIONS.md: `Related User Stories: US-010 (AC-010-1, AC-010-2)`
-- Link format in USER_STORIES.md: `Related Transformations: T-20251130-013`
+- Link format in User Story files: `Related Transformations: T-20251130-013`
 
 ### Version Control
 - All changes tracked via Git commits
@@ -128,7 +130,10 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 * **Security**: API Keys/Secrets in `.env` or Secret Manager.
 * **Performance**: Include O( ) complexity/memory footprint comments.
 * **Logging/Monitoring**: Structured logging + core metric suggestions.
-* **Review Summary**: Summarize activities in format "Summary: Refactored X, Added test Y, Updated Z. Structural Cohesion improved by Z%".
+* **Testing Strategy**:
+    *   **Unit (Vitest)**: For all logic and independent components. Mandatory for new utils/hooks. Filename: `*.test.ts`
+    *   **E2E (Playwright)**: For complete user flows and page transitions. Filename: `*.spec.ts`
+*   **Review Summary**: Summarize activities in format "Summary: Refactored X, Added test Y, Updated Z. Structural Cohesion improved by Z%".
 
 ---
 
