@@ -33,8 +33,8 @@ Core functionality for creating, managing, and storing conversation sessions.
 **I want to** 대화 내용의 화자(Speaker) 이름을 수정하고 싶다
 **So that** '화자1', '참여자A' 같이 불명확한 이름을 실제 이름으로 정리할 수 있도록.
 
-- [ ] AC-017-1: 대화 목록에서 화자 이름을 클릭하여 수정할 수 있다.
-- [ ] AC-017-2: 화자 이름을 수정하면, 해당 세션 내의 동일한 화자는 모두 일괄 변경된다 (Bulk Update).
+- [x] AC-017-1: 대화 목록에서 화자 이름을 클릭하여 수정할 수 있다.
+- [x] AC-017-2: 화자 이름을 수정하면, 해당 세션 내의 동일한 화자는 모두 일괄 변경된다 (Bulk Update).
 
 ### US-013: 축어록 파일 업로드
 **As a** 사용자
