@@ -1,0 +1,21 @@
+# User Stories Dashboard
+
+## Overview
+This directory contains the detailed user stories and acceptance criteria for DialogueLab, organized by functional domain.
+
+## Domains (Themes)
+
+### 📂 [Session Management & Data](01_session_management.md)
+Core functionality for creating, managing, and storing conversation sessions.
+- **Includes**: Session creation, list view, file upload, update/delete operations.
+
+### 📂 [Reflection & Practice](02_reflection_practice.md)
+AI-powered analysis, lenses, and practice tools.
+- **Includes**: Lens selection, AI feedback, MITI evaluation, practice cards.
+
+### 📂 [Identity & Collaboration](03_identity_collaboration.md)
+User accounts, profiles, and collaborative features.
+- **Includes**: Authentication, profile management, user search, sharing/invitations.
+
+---
+**Note**: Check [USER_STORY_MAP.md](../USER_STORY_MAP.md) for a release-based view.

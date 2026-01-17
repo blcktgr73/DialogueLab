@@ -190,7 +190,9 @@
 #### B. 녹음 & 축어록
 * 녹음 파일 업로드 (Future)
 * **축어록 파일 업로드 (TXT, CSV/Excel)** (New)
-* 축어록 생성 (AI STT 연동 - Future)
+* **다자간 음성 인식 (Google Cloud STT)** (New)
+  * Speaker Diarization (화자 분리) 지원
+  * 최대 10명 이상의 화자 구분 가능
 * 화자 구분
 * 타임스탬프
 * 텍스트 수정 가능

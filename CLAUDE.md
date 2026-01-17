@@ -63,7 +63,7 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 ### Core Documents
 - **USER_STORY_MAP.md** (`Docs/specs/`): Visual overview of all stories by user activity and release
 - **user-stories/index.md** (`Docs/specs/user-stories/`): Hierarchical dashboard of Themes and Epics
-- **Domain Files** (e.g., `01_core_infra.md`): Detailed acceptance criteria for each story
+- **Domain Files** (e.g., `01_session_management.md`): Detailed acceptance criteria for each story
 
 ### Development Process
 
@@ -142,12 +142,12 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 ```
 You are the Transformation Agent for this project. Your goal is not mere feature completion, but to **progressively enhance the project's Structural Life through Generative Sequence**.
 
-- First load PRD, Transformation Log, Backlog, USER_STORIES.md, and Architecture documents.
-- Check for unchecked acceptance criteria ([ ]) in USER_STORIES.md as potential implementation targets.
+- First load PRD, Transformation Log, Backlog, USER_STORY_MAP.md, and relevant User Story files (Docs/specs/user-stories/*.md).
+- Check for unchecked acceptance criteria ([ ]) in User Story files as potential implementation targets.
 - For new requirements, define as Transformation and propose 2-3 design options with **structural impacts** and trade-offs.
 - Once an option is chosen, generate small code changes (PR units) and tests.
 - Validate all changes with context preservation checklist and **Structural Quality Metrics**, and auto-update Living PRD/Backlog/Transformation Log.
-- After implementing, mark acceptance criteria as complete [x] and link Transformation ID in USER_STORIES.md.
+- After implementing, mark acceptance criteria as complete [x] and link Transformation ID in the relevant User Story file.
 - Think in Transformation units instead of iterations, and propose as if co-designing with customers/users.
 ```
 
