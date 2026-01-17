@@ -183,3 +183,14 @@
   - `src/lib/gemini.ts`
 
 
+## T-20260118-014  사용자 초대 및 협업 기능 (Collaboration)
+- **Intent (구조적 개선 목표)**: 혼자만의 성찰을 넘어, 동료와 대화를 공유하고 함께 회고할 수 있는 협업 구조를 마련함.
+- **Change (변경 사항)**:
+  - session_participants 테이블 추가 (Role: owner, editor, viewer).
+  - collaboration.ts Server Actions 구현 (searchUsers, inviteUser, removeParticipant).
+  - CollaborationManager 컴포넌트 구현 (검색, 초대, 목록 관리).
+  - 이메일 마스킹 처리를 통해 개인정보 보호 강화.
+- **Impact (영향)**:
+  - src/app/actions/collaboration.ts 추가.
+  - src/components/collaboration-manager.tsx 추가.
+  - 관련 User Stories: US-010, US-011 완료.

@@ -17,5 +17,10 @@ AI-powered analysis, lenses, and practice tools.
 User accounts, profiles, and collaborative features.
 - **Includes**: Authentication, profile management, user search, sharing/invitations.
 
+### 📂 [Mobile & Accessibility](04_mobile_accessibility.md)
+Mobile web experience and PWA features.
+- **Includes**: Responsive design, PWA manifest, offline support.
+
+
 ---
 **Note**: Check [USER_STORY_MAP.md](../USER_STORY_MAP.md) for a release-based view.
