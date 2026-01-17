@@ -13,7 +13,8 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 
 ### 1. Context Awareness & Structural Preservation
 
-* Preserve existing code and document structures, but verify **contextual consistency and structural quality metrics** when making Transformation-level changes.
+* Preserve existing code and document structures. Expand context scope to **Usage Scenario Context** (User Journey preservation).
+* Verify **contextual consistency (Code & UX) and structural quality metrics** when making Transformation-level changes.
 * Always reference PRD, Transformation Log, and Backlog before making changes.
 * Diff and impact summary required for code changes.
 
@@ -43,18 +44,24 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 * Convert customer/user scenarios directly into **Transformation Intent** with **problem-context-solution** structure.
 * Consider customers not as mere feedback providers, but as **co-designers driving structural improvements**.
 
+### 6. UX-Driven Design & Experience Consistency
+
+* **Design Transformation (DX)**: Mandatory **UI/UX Consistency Check** (Atomic Design compliance, Mental Model alignment).
+* **Cognitive Load Management**: Distinguish **User-facing** vs **Internal** changes. Minimize **Path Continuity** steps; ensure Graceful Evolution.
+* **Experience Value**: Decision making must assess **Task Efficiency** and **Experience Debt** reduction.
+
 ---
 
 ## 📑 Deliverable Structure
 
-* **PRD.md**: Project vision, key stories, constraints, open questions. (Living PRD)
-* **TRANSFORMATIONS.md**: Transformation records (Intent, Change, Constraints, Options, Acceptance, Impact, Follow-ups).
+* **Docs/specs/PRD.md**: Project vision, key stories, constraints, open questions. (Living PRD - includes **Task Efficiency** & **Experience Debt** rationale)
+* **Docs/transformations/TRANSFORMATIONS.md**: Transformation records (Intent, Change, Constraints, Options, Acceptance, Impact, Follow-ups).
 * **Docs/specs/user-stories/**: Hierarchical user story management directory.
     * **index.md**: Central dashboard for Themes and Epics.
     * **GOVERNANCE.md**: ID naming conventions and stewardship policy.
-* **DECISIONS.md**: Key design decisions and rationale.
-* **ARCHITECTURE.md**: Code/module structure and change history.
-* **USER_STORY_MAP.md**: Overview of all user stories by activity and release. (Docs/specs/)
+* **Docs/architecture/DECISIONS.md**: Key design decisions and rationale (includes Quantitative/Qualitative UX Impact).
+* **Docs/architecture/ARCHITECTURE.md**: Code/module structure and change history.
+* **Docs/specs/USER_STORY_MAP.md**: Overview of all user stories by activity and release.
 
 ---
 
@@ -63,7 +70,7 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 ### Core Documents
 - **USER_STORY_MAP.md** (`Docs/specs/`): Visual overview of all stories by user activity and release
 - **user-stories/index.md** (`Docs/specs/user-stories/`): Hierarchical dashboard of Themes and Epics
-- **Domain Files** (e.g., `01_session_management.md`): Detailed acceptance criteria for each story
+- **Domain Files** (e.g., `01_core_infra.md`): Detailed acceptance criteria for each story
 
 ### Development Process
 
@@ -111,10 +118,15 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 ```md
 ## T-YYYYMMDD-### — <Brief Title>
 - Intent (Structural Improvement Goal): How does this change enhance which part's life/wholeness of the existing system? (Problem-Context-Solution structure)
+- Transformation Type: [Internal | User-facing]
 - Change:
 - Constraints:
-- Design Options: (A) (B) (C) - Include trade-offs and structural impacts.
-- Chosen & Rationale:
+- Design Options: (A) (B) (C) - Include trade-offs, structural impacts, and **Cognitive Load Impact**.
+- Chosen & Rationale: (Must include **Task Efficiency** & **Experience Debt** comparison)
+- Usage Context & UX Impact:
+  - Consistency Score: [Existing Component Reuse %] / [Atomic Design Compliance]
+  - Path Continuity: [Step Count Change +/-] / [Flow Smoothness]
+  - Accessibility & Mental Model Alignment: [Check result]
 - Acceptance (Test/Demo Criteria):
 - Impact (API/Data/UX/Documentation Impact):
 - Structural Quality Metric Change: Summary of cohesion/coupling metric changes.
@@ -134,6 +146,10 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
     *   **Unit (Vitest)**: For all logic and independent components. Mandatory for new utils/hooks. Filename: `*.test.ts`
     *   **E2E (Playwright)**: For complete user flows and page transitions. Filename: `*.spec.ts`
 *   **Review Summary**: Summarize activities in format "Summary: Refactored X, Added test Y, Updated Z. Structural Cohesion improved by Z%".
+*   **UX Quality Verification**:
+    *   **Consistency**: Design System/Atomic Component reuse check.
+    *   **Accessibility**: WCAG/A11y complience check for User-facing changes.
+    *   **Context**: Ensure no breakage in User Journey (Path Continuity).
 
 ---
 
@@ -142,12 +158,12 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 ```
 You are the Transformation Agent for this project. Your goal is not mere feature completion, but to **progressively enhance the project's Structural Life through Generative Sequence**.
 
-- First load PRD, Transformation Log, Backlog, USER_STORY_MAP.md, and relevant User Story files (Docs/specs/user-stories/*.md).
-- Check for unchecked acceptance criteria ([ ]) in User Story files as potential implementation targets.
+- First load PRD, Transformation Log, Backlog, USER_STORIES.md, and Architecture documents.
+- Check for unchecked acceptance criteria ([ ]) in USER_STORIES.md as potential implementation targets.
 - For new requirements, define as Transformation and propose 2-3 design options with **structural impacts** and trade-offs.
 - Once an option is chosen, generate small code changes (PR units) and tests.
 - Validate all changes with context preservation checklist and **Structural Quality Metrics**, and auto-update Living PRD/Backlog/Transformation Log.
-- After implementing, mark acceptance criteria as complete [x] and link Transformation ID in the relevant User Story file.
+- After implementing, mark acceptance criteria as complete [x] and link Transformation ID in USER_STORIES.md.
 - Think in Transformation units instead of iterations, and propose as if co-designing with customers/users.
 ```
 
