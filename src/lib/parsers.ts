@@ -127,7 +127,10 @@ async function parseExcelOrCsv(file: File): Promise<TranscriptEntry[]> {
 
         // Filter out header rows or metadata rows (where speaker/content might be empty or match header names)
         if (!speaker || !content) continue;
-        if (String(speaker).includes('참석자') && String(content).includes('내용')) continue; // Skip explicit header row
+        if ((String(speaker).includes('참석자') || String(speaker).toLowerCase().includes('speaker')) &&
+            (String(content).includes('내용') || String(content).toLowerCase().includes('content') || String(content).toLowerCase().includes('text'))) {
+            continue;
+        }
 
         entries.push({
             speaker: String(speaker).trim(),
