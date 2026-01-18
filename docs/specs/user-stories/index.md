@@ -21,6 +21,10 @@ User accounts, profiles, and collaborative features.
 Mobile web experience and PWA features.
 - **Includes**: Responsive design, PWA manifest, offline support.
 
+### 📂 [Agentic Simulation](05_agentic_simulation.md)
+Real-time Standardized Patient simulation for MI training.
+- **Includes**: Persona setup, Real-time voice interaction (Gemini Live), Multimodal feedback.
+
 
 ---
 **Note**: Check [USER_STORY_MAP.md](../USER_STORY_MAP.md) for a release-based view.

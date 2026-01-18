@@ -198,21 +198,26 @@
 ## T-20260118-015 — 다자간 음성 인식 (STT) 구현
 - **Intent (구조적 개선 목표)**: 음성 대화를 텍스트(연습 재료)로 변환하여 성찰(Reflection)의 기반을 마련함. "무슨 말이 오갔는가"를 객관적인 데이터로 확보.
 - **Change (변경 사항)**:
-  - **AudioRecorder UI**: 브라우저 내장 API 활용 녹음 및 시각적 피드백 제공.
-  - **STT API Route**: `src/app/api/stt/route.ts` 구현 (Google Cloud Speech-to-Text 연동).
-  - **Google Cloud SDK**: `@google-cloud/speech` 라이브러리 추가.
+  - **AudioRecorder UI**:
+    - `AudioVisualizer`: Web Audio API(AnalyserNode) + Canvas를 활용한 실시간 음성 파형 시각화.
+    - `DeviceSelector`: `navigator.mediaDevices.enumerateDevices()`를 통한 마이크 선택 기능.
+    - `RecordingTimer`: 녹음 시간 실시간 표시.
+  - **STT API Route**: `src/app/api/stt/route.ts` 구현 (Google Cloud Speech-to-Text).
+  - **Robustness**:
+    - `google-speech.ts`: Vercel 환경 변수(Private Key) 파싱 로직 강화 (개행 문자 및 prefix 자동 처리).
+  - **Client-Side Processing**: `AudioContext`를 사용하여 모바일 호환성 확보.
 - **Constraints (제약 사항)**:
-  - **iOS Safari 호환성**: `audio/webm` 미지원 구버전 대비 필요 (최신 버전은 `MediaRecorder` 지원).
-  - **Client-Side Formatting**: 서버 변환 없이 브라우저에서 STT 호환 포맷(`WEBM_OPUS`) 생성.
+  - **iOS Safari 호환성**: `MediaRecorder` API 지원 확인, `audio/webm` 포맷 활용.
 - **Design Options (설계 옵션)**:
   - (A) Server-Side Conversion: 모든 포맷 수용 -> FFmpeg 서버 변환 (무거움).
   - (B) Client-Side Formatting: 클라이언트가 표준 포맷 준수 -> 서버는 Passthrough (가벼움, 선정됨).
 - **Chosen & Rationale (선택 및 근거)**:
-  - **Client-Side Formatting (B)**: 구조적 간결함과 유지보수성 우수. 서버 리소스 최소화.
+  - **Client-Side Formatting (B)**: 구조적 간결함과 서버 리소스 절약.
+  - **Visual Feedback**: 사용자가 녹음이 제대로 되고 있는지 확신을 가질 수 있도록 Visualizer 도입 (심리적 안정감).
 - **Usage Context & UX Impact**:
-  - **Consistency**: 기존 업로드 방식과 유사한 처리 흐름.
+  - **Consistency**: 기존 업로드 방식과 유사한 전사 처리 흐름 유지.
   - **Path Continuity**: 녹음 -> 전사 -> 렌즈 선택으로 이어지는 자연스러운 성찰 흐름 연결.
 - **Impact (영향)**:
-  - `package.json` 의존성 추가.
-  - `gcp_client_secret.json` 활용.
-  - `src/components/audio-recorder.tsx` 추가.
+  - `package.json` 의존성 추가: `@google-cloud/speech`, `lucide-react`.
+  - `src/components/audio-recorder.tsx` 구현 (Visualizer 포함).
+  - `src/lib/google-speech.ts` (Key Sanitization 로직 포함).
