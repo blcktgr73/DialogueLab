@@ -194,3 +194,25 @@
   - src/app/actions/collaboration.ts 추가.
   - src/components/collaboration-manager.tsx 추가.
   - 관련 User Stories: US-010, US-011 완료.
+
+## T-20260118-015 — 다자간 음성 인식 (STT) 구현
+- **Intent (구조적 개선 목표)**: 음성 대화를 텍스트(연습 재료)로 변환하여 성찰(Reflection)의 기반을 마련함. "무슨 말이 오갔는가"를 객관적인 데이터로 확보.
+- **Change (변경 사항)**:
+  - **AudioRecorder UI**: 브라우저 내장 API 활용 녹음 및 시각적 피드백 제공.
+  - **STT API Route**: `src/app/api/stt/route.ts` 구현 (Google Cloud Speech-to-Text 연동).
+  - **Google Cloud SDK**: `@google-cloud/speech` 라이브러리 추가.
+- **Constraints (제약 사항)**:
+  - **iOS Safari 호환성**: `audio/webm` 미지원 구버전 대비 필요 (최신 버전은 `MediaRecorder` 지원).
+  - **Client-Side Formatting**: 서버 변환 없이 브라우저에서 STT 호환 포맷(`WEBM_OPUS`) 생성.
+- **Design Options (설계 옵션)**:
+  - (A) Server-Side Conversion: 모든 포맷 수용 -> FFmpeg 서버 변환 (무거움).
+  - (B) Client-Side Formatting: 클라이언트가 표준 포맷 준수 -> 서버는 Passthrough (가벼움, 선정됨).
+- **Chosen & Rationale (선택 및 근거)**:
+  - **Client-Side Formatting (B)**: 구조적 간결함과 유지보수성 우수. 서버 리소스 최소화.
+- **Usage Context & UX Impact**:
+  - **Consistency**: 기존 업로드 방식과 유사한 처리 흐름.
+  - **Path Continuity**: 녹음 -> 전사 -> 렌즈 선택으로 이어지는 자연스러운 성찰 흐름 연결.
+- **Impact (영향)**:
+  - `package.json` 의존성 추가.
+  - `gcp_client_secret.json` 활용.
+  - `src/components/audio-recorder.tsx` 구현 예정.

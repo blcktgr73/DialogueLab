@@ -1,8 +1,10 @@
-import { Button } from "@/components/ui/button";
+
+"?%^import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, MessageSquare } from "lucide-react";
 import { createSession } from "@/app/actions/session";
 import { SessionCard } from "@/components/session-card";
+import { NewSessionCardContent } from "@/components/new-session-card-content";
 
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
@@ -31,20 +33,10 @@ export default async function Home() {
       </div>
 
       {/* Start New Session Card */}
-      <Card className="w-full max-w-sm border-dashed shadow-sm hover:shadow-md transition-shadow cursor-pointer group bg-card/50">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto bg-primary/10 p-3 rounded-full mb-2 group-hover:bg-primary/20 transition-colors">
-            <Mic className="w-6 h-6 text-primary" />
-          </div>
-          <CardTitle>새로운 세션 시작하기</CardTitle>
-          <CardDescription>
-            자유 대화나 연습 모드로 녹음을 시작합니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center pb-6">
-          <form action={createSession}>
-            <Button type="submit">시작하기</Button>
-          </form>
+      <Card className="w-full max-w-sm shadow-md hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-b from-white to-slate-50">
+        <CardHeader className="opacity-0 h-0 p-0 overflow-hidden"><CardTitle>New Session</CardTitle></CardHeader> {/* Accessibility hidden header */}
+        <CardContent className="flex justify-center py-10 px-6">
+          <NewSessionCardContent />
         </CardContent>
       </Card>
 
