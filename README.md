@@ -1,4 +1,4 @@
-# Conversation Practice Space (대화 연습 공간)
+# Dialogue Lab
 
 > **"이 시스템은 더 잘 말하게 만들지 않습니다. 대신, 다음 대화를 더 깊게 만듭니다."**
 
@@ -22,12 +22,16 @@
 
 이 프로젝트는 **Living Documentation** 원칙을 따릅니다. 모든 문서는 `docs/` 폴더 내에서 코드와 함께 진화합니다.
 
-- **[CLAUDE.md](CLAUDE.md)**: 개발 가이드라인 및 철학
-- **[PRD](docs/PRD.md)**: 제품 요구사항 (Living Spec)
-- **[User Story Map](docs/specs/USER_STORY_MAP.md)**: 사용자 여정 및 백로그 시각화
-- **[Architecture](docs/ARCHITECTURE.md)**: 시스템 아키텍처 및 변경 이력
-- **[Decisions](docs/DECISIONS.md)**: 주요 기술적 의사결정 (ADR)
-- **[Transformations](docs/TRANSFORMATIONS.md)**: 구조적 변경 기록
+- **[CLAUDE.md](CLAUDE.md)**: 개발 원칙, 프로세스, 및 컨벤션 (Project Bible)
+- **Specs (`docs/specs/`)**:
+  - **[PRD](docs/specs/PRD.md)**: 제품 요구사항 및 Living Specification
+  - **[User Story Map](docs/specs/USER_STORY_MAP.md)**: 사용자 여정 지도 및 백로그 시각화 (User Story Overview)
+  - **[User Stories](docs/specs/user-stories/)**: 상세 사용자 스토리 및 완료 기준
+- **Architecture (`docs/architecture/`)**:
+  - **[Architecture](docs/architecture/ARCHITECTURE.md)**: 시스템 구조 및 설계
+  - **[Decisions](docs/architecture/DECISIONS.md)**: 주요 아키텍처 의사결정 기록 (ADR)
+- **Transformations (`docs/transformations/`)**:
+  - **[Transformations](docs/transformations/TRANSFORMATIONS.md)**: 코드 변경 및 진화 기록 (Transformation Log)
 
 ## 🚀 시작하기
 
