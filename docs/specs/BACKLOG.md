@@ -9,6 +9,11 @@ Transformation 단위로 자동 진화합니다.
   - 현재 이메일 검색이 너무 개방적임 (2글자 이상이면 검색).
   - 정확한 이메일 매칭이나 닉네임 검색으로 제한하는 강화된 로직 필요.
 
+- [ ] **Unit Tests Expansion (Phase 2 & 3)**
+  - `src/lib/google-speech.ts`: 환경 변수 유효성 검사 및 싱글톤 패턴 검증.
+  - `src/app/actions/session.ts`: 세션 생성 및 트랜스크립트 저장 로직 (Supabase Mocking).
+  - `src/components/audio-recorder.tsx`: 녹음 상태 관리 및 비주얼라이저 동작 (MediaRecorder Mocking).
+
 - [ ] **Real-time Updates**
   - Supabase Realtime을 사용하여 새 참가자가 들어오거나 세션 내용이 변경될 때 화면 자동 갱신.
 

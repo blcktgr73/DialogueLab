@@ -215,4 +215,4 @@
 - **Impact (영향)**:
   - `package.json` 의존성 추가.
   - `gcp_client_secret.json` 활용.
-  - `src/components/audio-recorder.tsx` 구현 예정.
+  - `src/components/audio-recorder.tsx` 추가.
