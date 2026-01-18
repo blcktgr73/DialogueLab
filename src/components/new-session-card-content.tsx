@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createSession } from "@/app/actions/session";
+import { SimulationSetupDialog } from "@/components/simulation-setup-dialog";
+
 
 const AudioRecorder = dynamic(() => import('@/components/audio-recorder').then(mod => mod.AudioRecorder), {
     ssr: false,
@@ -42,12 +44,14 @@ export function NewSessionCardContent() {
         <div className="flex flex-col items-center w-full">
             <AudioRecorder onTranscriptionComplete={handleTranscriptionComplete} />
 
-            <div className="mt-8 text-sm text-muted-foreground border-t pt-4 w-full text-center">
-                <form action={createSession} className="inline-block">
-                    <button type="submit" className="text-muted-foreground hover:text-primary transition-colors hover:underline underline-offset-4">
-                        녹음 없이 바로 세션 만들기
-                    </button>
+            <div className="mt-8 border-t pt-6 w-full flex flex-col gap-3">
+                <form action={createSession}>
+                    <Button variant="outline" type="submit" className="w-full hover:text-primary border-dashed border-gray-300 text-gray-600 hover:bg-gray-50">
+                        녹음 없이 세션 만들기 (텍스트 업로드)
+                    </Button>
                 </form>
+
+                <SimulationSetupDialog />
             </div>
         </div>
     );

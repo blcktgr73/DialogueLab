@@ -25,10 +25,22 @@ export default async function Home() {
     sessions = data || [];
   }
 
+  let displayName = '연습자';
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+    if (profile?.full_name) {
+      displayName = profile.full_name;
+    }
+  }
+
   return (
     <div className="flex flex-col items-center space-y-8 py-12">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">안녕하세요{user ? ', 연습자님' : ''}.</h2>
+        <h2 className="text-2xl font-bold tracking-tight">안녕하세요, {displayName}님.</h2>
         <p className="text-muted-foreground">오늘도 대화의 깊이를 더해볼까요?</p>
       </div>
 

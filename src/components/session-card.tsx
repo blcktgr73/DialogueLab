@@ -18,6 +18,7 @@ interface SessionCardProps {
         title: string | null
         created_at: string
         mode: string
+        partner_type?: string
     }
 }
 
@@ -100,6 +101,13 @@ export function SessionCard({ session }: SessionCardProps) {
                         <div className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
                             {session.mode === 'practice' ? '연습' : '자유'}
                         </div>
+
+                        {/* Partner Type Badge */}
+                        {session.partner_type === 'ai' && (
+                            <div className="text-xs px-2 py-1 rounded-full bg-violet-100 text-violet-700 font-medium flex items-center gap-1 border border-violet-200">
+                                🤖 AI
+                            </div>
+                        )}
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

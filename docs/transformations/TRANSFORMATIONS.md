@@ -221,3 +221,40 @@
   - `package.json` 의존성 추가: `@google-cloud/speech`, `lucide-react`.
   - `src/components/audio-recorder.tsx` 구현 (Visualizer 포함).
   - `src/lib/google-speech.ts` (Key Sanitization 로직 포함).
+
+## T-20260118-016 — Agentic Simulation 모드 및 UI 구분
+- **Intent (구조적 개선 목표)**: '사람과의 대화'와 'AI 환자와의 시뮬레이션'을 명확히 구분하여, 사용자가 목적에 맞는 성찰 연습을 선택할 수 있게 함.
+- **Change (변경 사항)**:
+  - **Schema**: `sessions` 테이블에 `partner_type` 컬럼 추가 (human | ai).
+  - **UI**: `SessionCard`에 파트너 타입(AI/Human) 배지 표시.
+- **Decision (선택 및 근거)**:
+  - **Explicit Type**: `mode` (Free/Practice)와 `partner_type` (Human/AI)를 분리하여 독립적인 차원으로 관리. 예: "AI와 Free Talk", "AI와 Practice".
+- **Impact (영향)**:
+  - `migrations/012_add_simulation_support.sql` 추가.
+  - `src/components/session-card.tsx` 업데이트.
+
+## T-20260118-017 — 시뮬레이션 설정 및 메타데이터 지원
+- **Intent (구조적 개선 목표)**: 정해진 대본이 아닌, 사용자 맞춤형 '환자 페르소나'를 설정하여 동기면담 훈련의 효과를 극대화함.
+- **Change (변경 사항)**:
+  - **Schema**: `sessions` 테이블에 `metadata` (JSONB) 컬럼 추가.
+  - **Feature**: 시뮬레이션 페르소나 설정 (이름, 주제, 저항 수준 등) 저장.
+- **Decision (선택 및 근거)**:
+  - **JSONB**: 다양한 시뮬레이션 파라미터를 유연하게 저장하기 위해 NoSQL 형태의 컬럼 활용. 추후 분석 데이터나 추가 옵션 확장에도 용이.
+- **Impact (영향)**:
+  - `migrations/013_add_session_metadata.sql` 추가.
+  - `src/app/actions/session.ts` 업데이트 (metadata 처리).
+
+## T-20260118-018 — AI 파트너 경험(UX) 고도화 (AI Partner UX)
+- **Intent (구조적 개선 목표)**: 사용자가 AI 시뮬레이션을 '기계적인 테스트'가 아닌 '대화 파트너와의 연습'으로 인식하도록 용어와 경험을 재정의함. 또한, 세션 생성의 두 가지 경로(수동 업로드 vs AI 대화)를 시각적으로 균형 있게 배치함.
+- **Change (변경 사항)**:
+  - **Terminology**: 'AI 환자(Patient)' -> 'AI 파트너(Partner)'로 용어 변경.
+  - **UI Hierarchy**: 세션 생성 버튼 2종을 수직 스택으로 정렬하고, 색상 톤(Gray/Violet)을 통해 기능적 성격(Utility vs Feature)을 구분하되 시각적 균형을 맞춤.
+  - **Personalization**: 홈 화면에서 사용자 이름(프로필)을 불러와 맞춤형 인사를 제공.
+- **Design Options (설계 옵션)**:
+  - (A) 탭 분리: 녹음/업로드/AI 탭을 나눔 -> 복잡도 증가.
+  - (B) 버튼 스택: 한 화면에서 모든 옵션 노출 (선택됨).
+- **Impact (영향)**:
+  - `src/app/page.tsx` (프로필 연동).
+  - `src/components/new-session-card-content.tsx` (레이아웃 개선).
+  - `src/components/simulation-setup-dialog.tsx` (용어 변경).
+

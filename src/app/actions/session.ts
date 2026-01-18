@@ -179,3 +179,38 @@ export async function updateSessionTitle(sessionId: string, newTitle: string) {
     revalidatePath('/')
     revalidatePath(`/sessions/${sessionId}`)
 }
+
+export async function createSimulationSession(persona: { name: string; topic: string; resistance: number }) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error('User is not authenticated')
+    }
+
+    const { data, error } = await supabase
+        .from('sessions')
+        .insert([
+            {
+                title: `${persona.topic} (연습: ${persona.name})`,
+                mode: 'practice',
+                partner_type: 'ai',
+                user_id: user.id,
+                metadata: {
+                    persona: persona,
+                    started_at: new Date().toISOString()
+                }
+            }
+        ])
+        .select()
+        .single()
+
+    if (error) {
+        console.error('Error creating simulation session:', error)
+        throw new Error('시뮬레이션 세션 생성 실패')
+    }
+
+    if (data) {
+        redirect(`/sessions/${data.id}`)
+    }
+}
