@@ -1,5 +1,5 @@
 
-"?%^import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, MessageSquare } from "lucide-react";
 import { createSession } from "@/app/actions/session";
