@@ -4,6 +4,20 @@ import { getSpeechClient, checkSpeechConfig } from '@/lib/google-speech';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+    const workerToken = process.env.STT_WORKER_TOKEN;
+    if (!workerToken) {
+        console.error('[STT Start] Missing STT_WORKER_TOKEN');
+        return NextResponse.json(
+            { error: 'STT 서비스가 설정되지 않았습니다. 관리자에게 문의하세요.' },
+            { status: 500 }
+        );
+    }
+
+    const providedToken = req.headers.get('x-stt-worker-token');
+    if (!providedToken || providedToken !== workerToken) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const configStatus = checkSpeechConfig();
     if (!configStatus.ok) {
         console.error('[STT Start] Configuration Error:', configStatus.error);

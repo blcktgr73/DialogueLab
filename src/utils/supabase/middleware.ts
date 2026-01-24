@@ -2,6 +2,14 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+    if (request.nextUrl.pathname === '/api/stt/start') {
+        const workerToken = process.env.STT_WORKER_TOKEN;
+        const providedToken = request.headers.get('x-stt-worker-token');
+        if (workerToken && providedToken === workerToken) {
+            return NextResponse.next({ request });
+        }
+    }
+
     let supabaseResponse = NextResponse.next({
         request,
     })

@@ -141,9 +141,13 @@ async function uploadToGcs({ bucketName, filePath, destination, credentials, pro
 
 async function startSttIfRequested({ startUrl, gcsUri }) {
     if (!startUrl) return null;
+    const workerToken = process.env.STT_WORKER_TOKEN;
     const response = await fetch(startUrl, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+            'content-type': 'application/json',
+            ...(workerToken ? { 'x-stt-worker-token': workerToken } : {}),
+        },
         body: JSON.stringify({ gcsUri }),
     });
 

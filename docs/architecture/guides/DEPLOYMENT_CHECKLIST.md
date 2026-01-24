@@ -18,6 +18,7 @@ Vercel에 배포하고 로그인이 정상 작동하게 만들기 위한 단계�
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI...` | Supabase Anon Key |
 | `GEMINI_API_KEY` | `AIzaSy...` | Gemini API Key |
+| `STT_WORKER_TOKEN` | `32-byte-hex` | STT 워커 -> `/api/stt/start` 인증 토큰 (워커와 동일 값) |
 
 > **Tip**: `.env.local` 파일 내용을 한 번에 복사해서 붙여넣어도 Vercel이 알아서 파싱해 줍니다.
 

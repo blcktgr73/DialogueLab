@@ -64,6 +64,7 @@ SUPABASE_STT_BUCKET=audio-uploads
 NEXT_PUBLIC_SUPABASE_STT_BUCKET=audio-uploads
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
+STT_WORKER_TOKEN=... # worker -> /api/stt/start auth (server + worker must match)
 ```
 
 ### 4.3. Diarization Config
@@ -124,11 +125,16 @@ node scripts/stt-worker-server.mjs
 NEXT_PUBLIC_STT_WORKER_URL=http://localhost:8787/stt/start
 ```
 
+**Auth**:
+- Worker must include `x-stt-worker-token` when calling `/api/stt/start`.
+- Server validates against `STT_WORKER_TOKEN`.
+
 **Inputs (env)**:
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_STT_BUCKET`
 - `GCS_BUCKET_NAME`
 - `GOOGLE_PROJECT_ID`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`
+- `STT_WORKER_TOKEN` (worker sends `x-stt-worker-token` to `/api/stt/start`)
 
 **Output (stdout JSON)**:
 ```json

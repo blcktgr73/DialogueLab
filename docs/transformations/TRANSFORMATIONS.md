@@ -426,6 +426,31 @@
   - 응집도: 자동화 흐름 도입으로 파이프라인 완결성 증가.
   - 결합도: 환경변수로 외부 워커 연결부 분리.
 
+## T-20260124-026 — STT 워커 토큰 인증 추가
+- **Intent (구조적 개선 목표)**: 로컬 워커가 `/api/stt/start`를 호출할 때 인증을 추가하여 공개 API 남용을 방지한다. (문제: 미들웨어 로그인 리다이렉트로 워커가 HTML을 받음 → 해결: 토큰 기반 인증)
+- **Change (변경 사항)**:
+  - `scripts/stt-worker.mjs`: `x-stt-worker-token` 헤더 전송.
+  - `src/app/api/stt/start/route.ts`: `STT_WORKER_TOKEN` 검증 추가.
+  - `src/utils/supabase/middleware.ts`: 토큰 일치 시 `/api/stt/start` 통과.
+  - STT 설계 문서 및 배포 체크리스트 업데이트.
+- **Constraints (제약 사항)**:
+  - 워커/서버 환경변수 `STT_WORKER_TOKEN` 값 일치 필요.
+  - 토큰 노출 시 즉시 교체 필요.
+- **Design Options (설계 옵션)**:
+  - (A) 미들웨어 예외 처리만 적용: 빠르지만 공개됨.
+  - (B) 토큰 기반 인증 추가 (선택).
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) 최소 변경으로 인증 보장 및 운영 안전성 확보.
+- **Acceptance (테스트/데모 기준)**:
+  - 토큰이 맞으면 `operationName` 반환.
+  - 토큰이 없거나 다르면 401 반환.
+- **Impact (API/Data/UX/문서 영향)**:
+  - API: `/api/stt/start` 인증 요구.
+  - 문서: env/배포 가이드 업데이트.
+- **Structural Quality Metric Change (구조적 품질 지표 변화)**:
+  - 응집도: 인증 책임이 명확해져 응집도 증가.
+  - 결합도: 워커-서버 연결부 보안 의존성 명시.
+
 
 ## T-20260118-019 — Gemini Live 기반 실시간 음성 대화 (Real-time Conversation)
 - **Intent (구조적 개선 목표)**: 텍스트나 비동기 음성 전송이 아닌, 실제 사람과 대화하는 듯한 <No-Latency> 대화 경험을 제공하여 몰입형 훈련 환경을 구축함.
