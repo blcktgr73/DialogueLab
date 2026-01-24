@@ -45,6 +45,16 @@ function runWorker(prefix) {
 }
 
 const server = http.createServer(async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'content-type');
+
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
     if (req.method !== 'POST' || req.url !== '/stt/start') {
         res.writeHead(404, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: 'Not found' }));
