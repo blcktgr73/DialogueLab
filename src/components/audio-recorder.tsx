@@ -257,7 +257,8 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             const file = new File([blob], 'recording.webm', { type: safeType });
 
             const inlineLimitBytes = 4 * 1024 * 1024;
-            if (file.size > inlineLimitBytes) {
+            const isLongform = recordingTime > 60;
+            if (isLongform || file.size > inlineLimitBytes) {
                 toast.loading('대용량 업로드를 시작합니다...');
                 const { uploadId } = await uploadBlobInChunks({
                     blob: file,
