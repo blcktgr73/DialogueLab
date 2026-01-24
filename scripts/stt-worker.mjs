@@ -32,7 +32,7 @@ function getErrorMessage(error) {
 }
 
 function sanitizePrivateKey(key) {
-    return key.replace(/\\n/g, '\n');
+    return key.replace(/^"|"$/g, '').replace(/\\n/g, '\n');
 }
 
 function ensureDir(dir) {
@@ -171,6 +171,7 @@ async function main() {
         auth: { persistSession: false },
     });
 
+    console.log(`[stt-worker] downloading chunks from ${supabaseBucket}/${prefix}`);
     const chunks = await downloadChunks({
         supabase,
         bucket: supabaseBucket,
@@ -178,9 +179,11 @@ async function main() {
         tempDir,
     });
 
+    console.log(`[stt-worker] merging ${chunks.length} chunks`);
     const outputPath = path.join(tempDir, 'merged.webm');
     mergeWithFfmpeg({ chunks, outputPath, tempDir });
 
+    console.log('[stt-worker] uploading merged file to GCS');
     const destination = `${prefix.replace(/\/$/, '')}/merged.webm`;
     const gcsUri = await uploadToGcs({
         bucketName: gcsBucket,
@@ -190,6 +193,7 @@ async function main() {
         projectId,
     });
 
+    console.log('[stt-worker] uploaded to GCS:', gcsUri);
     const operationName = await startSttIfRequested({ startUrl, gcsUri });
 
     console.log(
