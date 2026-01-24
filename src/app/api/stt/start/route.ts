@@ -51,9 +51,12 @@ export async function POST(req: NextRequest) {
                 encoding: 'WEBM_OPUS' as const,
                 sampleRateHertz: 48000,
                 languageCode: 'ko-KR',
-                enableSpeakerDiarization: true,
-                minSpeakerCount: 2,
-                maxSpeakerCount: 10,
+                enableWordTimeOffsets: true,
+                diarizationConfig: {
+                    enableSpeakerDiarization: true,
+                    minSpeakerCount: 2,
+                    maxSpeakerCount: 10,
+                },
                 model: 'latest_long',
             },
         };

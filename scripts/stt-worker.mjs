@@ -39,11 +39,29 @@ function ensureDir(dir) {
     fs.mkdirSync(dir, { recursive: true });
 }
 
+async function withRetry(fn, { retries = 3, minDelayMs = 500, label = 'operation' } = {}) {
+    let attempt = 0;
+    // Simple exponential backoff for transient fetch errors.
+    while (true) {
+        try {
+            return await fn();
+        } catch (error) {
+            attempt += 1;
+            if (attempt > retries) {
+                throw error;
+            }
+            const delay = minDelayMs * Math.pow(2, attempt - 1);
+            console.error(`[stt-worker] ${label} failed (attempt ${attempt}/${retries}), retrying in ${delay}ms`);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+    }
+}
+
 async function downloadChunks({ supabase, bucket, prefix, tempDir }) {
-    const { data: list, error } = await supabase.storage.from(bucket).list(prefix, {
-        limit: 1000,
-        offset: 0,
-    });
+    const { data: list, error } = await withRetry(
+        () => supabase.storage.from(bucket).list(prefix, { limit: 1000, offset: 0 }),
+        { label: 'supabase list' }
+    );
     if (error) {
         throw error;
     }
@@ -59,7 +77,10 @@ async function downloadChunks({ supabase, bucket, prefix, tempDir }) {
 
     const localPaths = [];
     for (const chunkPath of chunks) {
-        const { data, error: downloadError } = await supabase.storage.from(bucket).download(chunkPath);
+        const { data, error: downloadError } = await withRetry(
+            () => supabase.storage.from(bucket).download(chunkPath),
+            { label: `supabase download ${chunkPath}` }
+        );
         if (downloadError) {
             throw downloadError;
         }
@@ -125,7 +146,7 @@ function mergeWithFfmpeg({ chunks, outputPath, tempDir }) {
 async function uploadToGcs({ bucketName, filePath, destination, credentials, projectId }) {
     const keyHeader = credentials.private_key?.split('\n')[0] || '';
     const keyFooter = credentials.private_key?.split('\n').slice(-1)[0] || '';
-    console.log(`[stt-worker] GCS creds: project=${projectId}, keyHeader=${keyHeader}, keyFooter=${keyFooter}`);
+    console.error(`[stt-worker] GCS creds: project=${projectId}, keyHeader=${keyHeader}, keyFooter=${keyFooter}`);
     let storage;
     try {
         storage = new Storage({ credentials, projectId });
@@ -183,7 +204,7 @@ async function main() {
         auth: { persistSession: false },
     });
 
-    console.log(`[stt-worker] downloading chunks from ${supabaseBucket}/${prefix}`);
+    console.error(`[stt-worker] downloading chunks from ${supabaseBucket}/${prefix}`);
     const chunks = await downloadChunks({
         supabase,
         bucket: supabaseBucket,
@@ -191,14 +212,14 @@ async function main() {
         tempDir,
     });
 
-    console.log(`[stt-worker] merging ${chunks.length} chunks`);
+    console.error(`[stt-worker] merging ${chunks.length} chunks`);
     const outputPath = path.join(tempDir, 'merged.webm');
     mergeWithFfmpeg({ chunks, outputPath, tempDir });
 
     const keyHeader = privateKey.split('\n')[0] || '';
     const keyFooter = privateKey.split('\n').slice(-1)[0] || '';
-    console.log(`[stt-worker] GCS key check: header=${keyHeader}, footer=${keyFooter}, length=${privateKey.length}`);
-    console.log('[stt-worker] uploading merged file to GCS');
+    console.error(`[stt-worker] GCS key check: header=${keyHeader}, footer=${keyFooter}, length=${privateKey.length}`);
+    console.error('[stt-worker] uploading merged file to GCS');
     const destination = `${prefix.replace(/\/$/, '')}/merged.webm`;
     const gcsUri = await uploadToGcs({
         bucketName: gcsBucket,
@@ -208,10 +229,10 @@ async function main() {
         projectId,
     });
 
-    console.log('[stt-worker] uploaded to GCS:', gcsUri);
+    console.error('[stt-worker] uploaded to GCS:', gcsUri);
     const operationName = await startSttIfRequested({ startUrl, gcsUri });
 
-    console.log(
+    process.stdout.write(
         JSON.stringify(
             {
                 gcsUri,

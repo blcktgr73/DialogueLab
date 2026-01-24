@@ -70,13 +70,16 @@ STT_WORKER_TOKEN=... # worker -> /api/stt/start auth (server + worker must match
 ### 4.3. Diarization Config
 ```javascript
 const config = {
-  encoding: 'LINEAR16', // or MP3 based on file
+  encoding: 'WEBM_OPUS',
+  sampleRateHertz: 48000,
   languageCode: 'ko-KR',
+  enableWordTimeOffsets: true, // required for words[] speakerTag
   diarizationConfig: {
     enableSpeakerDiarization: true,
     minSpeakerCount: 2,
     maxSpeakerCount: 10,
   },
+  model: 'latest_long',
   uri: `gs://${bucketName}/${fileName}`
 };
 ```
@@ -84,7 +87,9 @@ const config = {
 ### 4.4. Failure Modes & Recovery
 - **Upload interrupted**: Resume via Supabase resumable upload or retry missing chunks.
 - **Chunk merge fails**: Re-run merge with container-aware pipeline (ffmpeg concat).
+- **Supabase fetch failed**: Add worker retry/backoff for list/download (network flakiness).
 - **STT long-running time**: UI must show "Processing" with periodic polling.
+- **No diarization output**: If `words[]` empty, surface single-speaker transcript and log warning; revisit config.
 - **Cost control**: Delete temporary GCS object after processing completes or fails.
 
 ## 5. UI/UX
