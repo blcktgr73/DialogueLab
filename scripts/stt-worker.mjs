@@ -96,9 +96,13 @@ function mergeWithFfmpeg({ chunks, outputPath, tempDir }) {
         { stdio: 'pipe' }
     );
 
+    if (result.error) {
+        throw new Error(`ffmpeg exec failed: ${result.error.message}`);
+    }
     if (result.status !== 0) {
-        const stderr = result.stderr?.toString() || 'ffmpeg merge failed';
-        throw new Error(stderr);
+        const stderr = result.stderr?.toString() || '';
+        const message = stderr ? `ffmpeg merge failed: ${stderr}` : 'ffmpeg merge failed';
+        throw new Error(message);
     }
 }
 
