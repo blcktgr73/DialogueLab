@@ -385,6 +385,25 @@
 - **Follow-ups (후속 작업)**:
   - 클라이언트 폴링 완료 시 `complete` 호출 연결.
 
+## T-20260124-024 — 클라이언트 폴링/완료 연결
+- **Intent (구조적 개선 목표)**: longform STT 완료 결과를 사용자 흐름에 연결하여 세션 생성까지 이어지도록 한다. (문제: 서버 저장 이후 UI 경로 단절 → 해결: 클라이언트 폴링 + complete 호출)
+- **Change (변경 사항)**:
+  - `src/components/audio-recorder.tsx`: operationName 입력 및 폴링 완료 처리 UI 추가.
+- **Constraints (제약 사항)**:
+  - 워커 실행 후 operationName을 전달받아야 함.
+- **Design Options (설계 옵션)**:
+  - (A) 자동 폴링: 백그라운드 처리 필요.
+  - (B) 수동 입력 + 폴링: MVP에 적합 (선택).
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) 운영 단순성과 현재 워커 기반 흐름에 적합.
+- **Acceptance (테스트/데모 기준)**:
+  - operationName 입력 후 완료 시 세션 페이지로 이동.
+- **Impact (API/Data/UX/문서 영향)**:
+  - UX: 완료 확인 입력/버튼 추가.
+- **Structural Quality Metric Change (구조적 품질 지표 변화)**:
+  - 응집도: 클라이언트 완료 처리 흐름이 명시되어 응집도 증가.
+  - 결합도: 워커-클라이언트 연결부가 명확해져 결합도 감소.
+
 
 ## T-20260118-019 — Gemini Live 기반 실시간 음성 대화 (Real-time Conversation)
 - **Intent (구조적 개선 목표)**: 텍스트나 비동기 음성 전송이 아닌, 실제 사람과 대화하는 듯한 <No-Latency> 대화 경험을 제공하여 몰입형 훈련 환경을 구축함.

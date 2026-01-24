@@ -5,6 +5,7 @@ import { Mic, Square, Loader2, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { uploadBlobInChunks } from '@/lib/stt-upload';
+import { useRouter } from 'next/navigation';
 
 interface AudioRecorderProps {
     onTranscriptionComplete?: (text: string, rawData?: any) => void;
@@ -81,6 +82,9 @@ const AudioVisualizer = ({ stream }: { stream: MediaStream | null }) => {
 export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [longformUploadId, setLongformUploadId] = useState<string | null>(null);
+    const [operationName, setOperationName] = useState('');
+    const [isPolling, setIsPolling] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [mediaBlobUrl, setMediaBlobUrl] = useState<string | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -90,6 +94,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const router = useRouter();
 
     // Timer Logic: Dependent on isRecording state to be robust
     useEffect(() => {
@@ -246,8 +251,9 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                     },
                 });
                 toast.dismiss();
-                toast.success('업로드 완료. 전사 처리를 준비 중입니다.');
+                toast.success('업로드 완료. 워커 실행 후 operationName을 입력해주세요.');
                 console.log('[Recorder] Longform upload completed:', uploadId);
+                setLongformUploadId(uploadId);
                 return;
             }
 
@@ -271,12 +277,68 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                 onTranscriptionComplete(data.text, data);
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            toast.error(error.message || '변환 중 오류가 발생했습니다.');
+            toast.error(error instanceof Error ? error.message : '변환 중 오류가 발생했습니다.');
         } finally {
             setIsUploading(false);
             setUploadProgress(null);
+        }
+    };
+
+    const pollLongformStatus = async (opName: string) => {
+        const response = await fetch(`/api/stt/status?name=${encodeURIComponent(opName)}`);
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || '상태 조회 실패');
+        }
+        return response.json() as Promise<{
+            done: boolean;
+            text?: string | null;
+            metadata?: unknown;
+        }>;
+    };
+
+    const handleCompleteLongform = async () => {
+        if (!operationName) {
+            toast.error('operationName을 입력해주세요.');
+            return;
+        }
+        try {
+            setIsPolling(true);
+            toast.loading('전사 상태를 확인 중입니다...');
+            let done = false;
+            while (!done) {
+                const status = await pollLongformStatus(operationName.trim());
+                if (status.done) {
+                    done = true;
+                    break;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 5000));
+            }
+
+            const completeResponse = await fetch('/api/stt/complete', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ operationName: operationName.trim() }),
+            });
+            const data = await completeResponse.json();
+            if (!completeResponse.ok) {
+                throw new Error(data.error || '완료 처리 실패');
+            }
+            toast.dismiss();
+            toast.success('전사 완료. 세션으로 이동합니다.');
+            if (data.sessionId) {
+                router.push(`/sessions/${data.sessionId}`);
+            } else if (onTranscriptionComplete && data.text) {
+                onTranscriptionComplete(data.text, data);
+            }
+        } catch (error: unknown) {
+            console.error(error);
+            toast.dismiss();
+            toast.error(error instanceof Error ? error.message : '완료 처리 중 오류가 발생했습니다.');
+        } finally {
+            setIsPolling(false);
         }
     };
 
@@ -381,6 +443,28 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                             <span className="sr-only">초기화</span>
                         </Button>
                     </div>
+                </div>
+            )}
+
+            {!isRecording && longformUploadId && (
+                <div className="w-full space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="text-xs text-muted-foreground">
+                        업로드 ID: <span className="font-mono">{longformUploadId}</span>
+                    </div>
+                    <input
+                        type="text"
+                        value={operationName}
+                        onChange={(e) => setOperationName(e.target.value)}
+                        placeholder="operationName 입력 (worker 결과)"
+                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+                    />
+                    <Button
+                        onClick={handleCompleteLongform}
+                        disabled={isUploading || isPolling}
+                        className="w-full"
+                    >
+                        {isPolling ? '전사 상태 확인 중...' : '전사 완료 확인'}
+                    </Button>
                 </div>
             )}
         </div>
