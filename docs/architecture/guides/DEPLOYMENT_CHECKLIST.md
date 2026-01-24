@@ -17,7 +17,7 @@ Vercel에 배포하고 로그인이 정상 작동하게 만들기 위한 단계�
 | :--- | :--- | :--- |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI...` | Supabase Anon Key |
-| `GOOGLE_GEMINI_API_KEY` | `AIzaSy...` | Gemini API Key |
+| `GEMINI_API_KEY` | `AIzaSy...` | Gemini API Key |
 
 > **Tip**: `.env.local` 파일 내용을 한 번에 복사해서 붙여넣어도 Vercel이 알아서 파싱해 줍니다.
 

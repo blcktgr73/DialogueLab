@@ -258,3 +258,21 @@
   - `src/components/new-session-card-content.tsx` (레이아웃 개선).
   - `src/components/simulation-setup-dialog.tsx` (용어 변경).
 
+
+## T-20260118-019 — Gemini Live 기반 실시간 음성 대화 (Real-time Conversation)
+- **Intent (구조적 개선 목표)**: 텍스트나 비동기 음성 전송이 아닌, 실제 사람과 대화하는 듯한 <No-Latency> 대화 경험을 제공하여 몰입형 훈련 환경을 구축함.
+- **Change (변경 사항)**:
+  - **Connection**: Gemini Multimodal Live API (WebSocket) 연동.
+  - **Security**: Server-Side Ephemeral Token 생성 패턴 도입 (`tokens` API).
+  - **Audio**: `AudioContext` 기반의 실시간 Input Streaming (PCM 16kHz) 및 Output Playout.
+  - **Hook**: `useGeminiLive` 커스텀 훅 구현 (Connection, Send, Receive 관리).
+- **Constraints (제약 사항)**:
+  - **Vercel Functions**: WebSocket 서버 호스팅 불가 -> Client-Side WebSocket + Ephemeral Token 방식 채택.
+  - **Browser Support**: `AudioContext` 및 `WebSocket` 지원 브라우저 필수.
+- **Decision (선택 및 근거)**:
+  - **Direct WebSocket**: Latency 최소화를 위해 클라이언트가 Google 서버와 직접 통신하되, 인증은 서버를 경유한 토큰으로 처리.
+  - **Token Rotation**: 토큰 만료 시 재발급 로직 필요 (추후 고도화).
+- **Impact (영향)**:
+  - `src/app/actions/gemini-live.ts` 추가.
+  - `src/hooks/use-gemini-live.ts` 추가.
+  - `src/components/live-session-view.tsx` 추가.

@@ -1,4 +1,8 @@
-# 🎯 Purpose: Transformation-Centered AI Pair Programming
+# Development Principles
+
+> **Recovery**: Run `gt prime` after compaction, clear, or new session
+
+## Purpose: Transformation-Centered AI Pair Programming
 
 Enable Claude Code to support **Transformation-Centered AI Pair Programming** based on **Generative Sequence**, rather than simple code automation.
 
@@ -9,7 +13,37 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 
 ---
 
-## 🔑 Operating Principles
+## Core Philosophy: Concept-Driven Design
+
+This project follows Daniel Jackson's **Concept Design** methodology.
+Complexity is proportional to the number of concepts. Before adding new features, first review if existing concepts can be reused.
+
+### Theme = Concept (Unified Definition)
+
+**Theme** is identical to Daniel Jackson's **Concept**. All Themes must include the following 4 elements:
+
+| Element | Description | Example (Authentication) |
+|------|------|----------------------|
+| **Name** | A name intuitively understandable by the user | Authentication |
+| **State** | Data structure the concept needs to remember | sessions, credentials |
+| **Actions** | Commands the user can perform | login, logout, resetPassword |
+| **Operational Principle** | Achieving goals through interaction of actions | See below |
+
+**Operational Principle Example:**
+> "When a user logs in, a session is created; when they log out, the session is deleted.
+> Resetting the password issues a temporary token, allowing a new password to be set."
+
+### Story 계층 구조
+
+```
+Theme (= Concept)     ← Definition of State, Actions, Operational Principle
+    └── Epic          ← Large feature group
+        └── Story     ← Implementation unit (Includes Acceptance Criteria)
+```
+
+---
+
+## Operating Principles
 
 ### 1. Context Awareness & Structural Preservation
 
@@ -28,23 +62,34 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 6. **Update Documentation**: Synchronize Living PRD, Backlog, and Transformation Log.
 7. **Suggest Follow-up Transformations**: Propose 1-3 next step candidates.
 
-### 3. Modular Thinking & Testability
+### 3. Theme(Concept)-First Design
+
+* **Theme-Centric Grouping**: Group User Stories by **Theme (Concept)**, not by feature.
+  - Name Epic/Label as Theme name (e.g., "Login Feature" → **Authentication** Theme)
+  - Grouping by Theme prevents omissions during changes
+
+* **Theme Sync**: Check before starting sprint/work
+  - Does this Theme duplicate an existing Theme?
+  - Can an existing Theme be extended to solve this?
+  - Are State and Actions clearly defined?
+
+### 4. Modular Thinking & Testability
 
 * Changes performed in **small module/function** units.
 * Every Transformation includes **test cases**.
 * Utility and domain modules prioritize reusability.
 
-### 4. Traceability
+### 5. Traceability
 
 * All code changes linked to **Transformation ID (T-YYYYMMDD-###)**.
 * Cross-reference Backlog items, document links, and PRD items.
 
-### 5. User Collaboration (Co-Design)
+### 6. User Collaboration (Co-Design)
 
 * Convert customer/user scenarios directly into **Transformation Intent** with **problem-context-solution** structure.
 * Consider customers not as mere feedback providers, but as **co-designers driving structural improvements**.
 
-### 6. UX-Driven Design & Experience Consistency
+### 7. UX-Driven Design & Experience Consistency
 
 * **Design Transformation (DX)**: Mandatory **UI/UX Consistency Check** (Atomic Design compliance, Mental Model alignment).
 * **Cognitive Load Management**: Distinguish **User-facing** vs **Internal** changes. Minimize **Path Continuity** steps; ensure Graceful Evolution.
@@ -52,121 +97,89 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 
 ---
 
-## 📑 Deliverable Structure
+## Deliverable Structure
 
-* **Docs/specs/PRD.md**: Project vision, key stories, constraints, open questions. (Living PRD - includes **Task Efficiency** & **Experience Debt** rationale)
-* **Docs/transformations/TRANSFORMATIONS.md**: Transformation records (Intent, Change, Constraints, Options, Acceptance, Impact, Follow-ups).
-* **Docs/specs/user-stories/**: Hierarchical user story management directory.
-    * **index.md**: Central dashboard for Themes and Epics.
-    * **GOVERNANCE.md**: ID naming conventions and stewardship policy.
-* **Docs/architecture/DECISIONS.md**: Key design decisions and rationale (includes Quantitative/Qualitative UX Impact).
-* **Docs/architecture/ARCHITECTURE.md**: Code/module structure and change history.
-* **Docs/specs/USER_STORY_MAP.md**: Overview of all user stories by activity and release.
-
----
-
-## 📋 User Story-Based Development Workflow
-
-### Core Documents
-- **USER_STORY_MAP.md** (`Docs/specs/`): Visual overview of all stories by user activity and release
-- **user-stories/index.md** (`Docs/specs/user-stories/`): Hierarchical dashboard of Themes and Epics
-- **Domain Files** (e.g., `01_core_infra.md`): Detailed acceptance criteria for each story
-
-### Development Process
-
-1. **Identify Work**: Check unchecked acceptance criteria `[ ]` in USER_STORIES.md
-2. **Discuss if Needed**: Complex requirements → clarify via conversation
-3. **Implement**: Create code changes as Transformation
-4. **Record**: Link Transformation to User Story ID (e.g., "Related: US-010")
-5. **Mark Complete**: Check acceptance criteria `[x]` and update story status
-6. **Update Map**: Reflect changes in USER_STORY_MAP.md
-
-### Acceptance Criteria Format (Simple)
-```md
-- [x] AC-010-1: Completed criteria
-- [ ] AC-010-2: Pending criteria  ← implement this
+```
+docs/
+├── specs/
+│   ├── PRD.md                    # Project vision, constraints, open questions
+│   └── user-stories/
+│       ├── index.md              # Theme/Epic/Story hierarchy dashboard (Single Source)
+│       ├── GOVERNANCE.md         # ID naming rules and policies
+│       └── <theme-name>.md       # Detailed definition per Theme + Stories
+├── transformations/
+│   └── TRANSFORMATIONS.md        # Transformation log
+├── architecture/
+│   ├── DECISIONS.md              # Design decisions and rationale
+│   └── ARCHITECTURE.md           # Code/module structure
+├── guidelines/                   # Workflow & Coding Standards
+└── templates/                    # Document Templates
 ```
 
-### Adding New User Stories
-- **ID**: Use next sequential number for stories (US-XXX), Epics (EPIC-XX), or Themes (THEME-XX)
-- **Location**: Define in `index.md` first, then add to the appropriate domain file
-- **Governance**: Follow `Docs/specs/user-stories/GOVERNANCE.md`
-- **Status**: Initial status is ⏳ (Planned)
-
-### Cancelling Stories
-- Move cancelled stories to "Cancelled Stories" section (preserve history)
-- Do not delete - maintain traceability
-
-### Large-Scale Changes
-- Update USER_STORY_MAP.md first to visualize full scope
-- Discuss priority/sequence with AI before implementation
-- Implement 1-3 acceptance criteria at a time (incremental)
-
-### Relationship with Transformations
-- Each Transformation can implement one or more Acceptance Criteria
-- Link format in TRANSFORMATIONS.md: `Related User Stories: US-010 (AC-010-1, AC-010-2)`
-- Link format in User Story files: `Related Transformations: T-20251130-013`
-
-### Version Control
-- All changes tracked via Git commits
-- No separate changelog needed within documents
+**Note**: `USER_STORY_MAP.md` is consolidated into `index.md` and managed as a single source.
 
 ---
 
-## 🧩 Transformation Template
+## Reference
 
-```md
-## T-YYYYMMDD-### — <Brief Title>
-- Intent (Structural Improvement Goal): How does this change enhance which part's life/wholeness of the existing system? (Problem-Context-Solution structure)
-- Transformation Type: [Internal | User-facing]
-- Change:
-- Constraints:
-- Design Options: (A) (B) (C) - Include trade-offs, structural impacts, and **Cognitive Load Impact**.
-- Chosen & Rationale: (Must include **Task Efficiency** & **Experience Debt** comparison)
-- Usage Context & UX Impact:
-  - Consistency Score: [Existing Component Reuse %] / [Atomic Design Compliance]
-  - Path Continuity: [Step Count Change +/-] / [Flow Smoothness]
-  - Accessibility & Mental Model Alignment: [Check result]
-- Acceptance (Test/Demo Criteria):
-- Impact (API/Data/UX/Documentation Impact):
-- Structural Quality Metric Change: Summary of cohesion/coupling metric changes.
-- Follow-ups:
+* **Workflow**: [docs/guidelines/WORKFLOW.md](./docs/guidelines/WORKFLOW.md)
+* **Coding Standards**: [docs/guidelines/CODING_STANDARDS.md](./docs/guidelines/CODING_STANDARDS.md)
+* **Templates**:
+  * Theme: [docs/templates/THEME_TEMPLATE.md](./docs/templates/THEME_TEMPLATE.md)
+  * Transformation: [docs/templates/TRANSFORMATION_TEMPLATE.md](./docs/templates/TRANSFORMATION_TEMPLATE.md)
+  * User Story: [docs/templates/USER_STORY_TEMPLATE.md](./docs/templates/USER_STORY_TEMPLATE.md)
+
+---
+
+## Quick Reference
+
+```bash
+# Issue tracking (bd/beads)
+bd ready              # Find available work
+bd show <id>          # View issue details
+bd close <id>         # Complete work
+bd sync               # Sync with git
+
+# Agent management (gt/Gas Town)
+gt mail inbox         # Check messages
+gt rig list           # List workspaces
+gt status             # Town overview
+gt dashboard          # Web monitoring UI
+gt hook               # Check hooked work
 ```
 
 ---
 
-## 🛠️ Coding Guide (Extended from CLAUDE4CODING)
+## Landing the Plane (Session Completion)
 
-* **Before Code Change**: Design diagrams/flow explanation before and after changes.
-* **After Code Change**: Present diff, comments, and test code.
-* **Security**: API Keys/Secrets in `.env` or Secret Manager.
-* **Performance**: Include O( ) complexity/memory footprint comments.
-* **Logging/Monitoring**: Structured logging + core metric suggestions.
-* **Testing Strategy**:
-    *   **Unit (Vitest)**: For all logic and independent components. Mandatory for new utils/hooks. Filename: `*.test.ts`
-    *   **E2E (Playwright)**: For complete user flows and page transitions. Filename: `*.spec.ts`
-*   **Review Summary**: Summarize activities in format "Summary: Refactored X, Added test Y, Updated Z. Structural Cohesion improved by Z%".
-*   **UX Quality Verification**:
-    *   **Consistency**: Design System/Atomic Component reuse check.
-    *   **Accessibility**: WCAG/A11y complience check for User-facing changes.
-    *   **Context**: Ensure no breakage in User Journey (Path Continuity).
+Mandatory steps upon work completion:
+
+1. **Create Remaining Work Issues** - Record follow-up tasks
+2. **Pass Quality Gate** - Tests, linter, build
+3. **Update Issue Status** - Mark as done/in-progress
+4. **Remote Push (Mandatory)**:
+   ```bash
+   git pull --rebase && bd sync && git push
+   git status  # Confirm "up to date with origin"
+   ```
+5. **Handoff** - Provide context for the next session
+
+**CRITICAL**: Work is not complete until `git push` succeeds
 
 ---
 
-## 🚀 Claude Initial Prompt (System Instruction Example)
+## Claude Initial Prompt (System Instruction)
 
 ```
 You are the Transformation Agent for this project. Your goal is not mere feature completion, but to **progressively enhance the project's Structural Life through Generative Sequence**.
 
-- First load PRD, Transformation Log, Backlog, USER_STORIES.md, and Architecture documents.
-- Check for unchecked acceptance criteria ([ ]) in USER_STORIES.md as potential implementation targets.
+- First load PRD, Theme definitions (user-stories/*.md), Transformation Log, and Architecture documents.
+- Before adding new features, check if existing Themes can be reused or extended.
+- Each Theme must have State, Actions, and Operational Principle defined.
+- Check for unchecked acceptance criteria ([ ]) in theme files as potential implementation targets.
 - For new requirements, define as Transformation and propose 2-3 design options with **structural impacts** and trade-offs.
 - Once an option is chosen, generate small code changes (PR units) and tests.
-- Validate all changes with context preservation checklist and **Structural Quality Metrics**, and auto-update Living PRD/Backlog/Transformation Log.
-- After implementing, mark acceptance criteria as complete [x] and link Transformation ID in USER_STORIES.md.
+- Validate all changes with context preservation checklist and **Structural Quality Metrics**.
+- After implementing, mark acceptance criteria as complete [x] and link Transformation ID.
 - Think in Transformation units instead of iterations, and propose as if co-designing with customers/users.
 ```
-
----
-
-> **Note**: Korean version available: [CLAUDE.md](CLAUDE.md)
