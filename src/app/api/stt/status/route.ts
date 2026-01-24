@@ -39,17 +39,34 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        const response = progress.result;
-        const transcription = response?.results
-            ?.map((result) => result.alternatives?.[0]?.transcript)
+        const response = (progress.result && typeof progress.result === 'object')
+            ? (progress.result as Record<string, unknown>)
+            : {};
+        const results = Array.isArray(response.results) ? response.results : [];
+        const transcription = results
+            .map((result) => {
+                if (!result || typeof result !== 'object') return '';
+                const alternatives = (result as Record<string, unknown>).alternatives;
+                if (!Array.isArray(alternatives) || alternatives.length === 0) return '';
+                const firstAlt = alternatives[0] as Record<string, unknown>;
+                return typeof firstAlt.transcript === 'string' ? firstAlt.transcript : '';
+            })
+            .filter((line) => line)
             .join('\n');
-        const wordsInfo = response?.results?.[response.results.length - 1]?.alternatives?.[0]?.words ?? [];
+        const lastResult = results.length > 0 ? results[results.length - 1] : null;
+        const lastAlt = lastResult && typeof lastResult === 'object'
+            ? (lastResult as Record<string, unknown>).alternatives
+            : null;
+        const firstAlt = Array.isArray(lastAlt) ? lastAlt[0] : null;
+        const wordsInfo = firstAlt && typeof firstAlt === 'object'
+            ? ((firstAlt as Record<string, unknown>).words as unknown[] | undefined) ?? []
+            : [];
 
         return NextResponse.json({
             done: progress.done,
             metadata: progress.metadata ?? null,
             text: transcription ?? null,
-            details: response?.results ?? null,
+            details: results ?? null,
             words: wordsInfo,
         });
     } catch (error: unknown) {

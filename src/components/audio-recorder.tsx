@@ -492,7 +492,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                         className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
                     />
                     <Button
-                        onClick={handleCompleteLongform}
+                        onClick={() => handleCompleteLongform()}
                         disabled={isUploading || isPolling}
                         className="w-full"
                     >

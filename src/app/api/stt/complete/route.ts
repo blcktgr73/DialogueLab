@@ -161,7 +161,8 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        const results = asArray(progress.result?.results);
+        const resultRecord = asRecord(progress.result);
+        const results = asArray(resultRecord.results);
         const fullText = extractTranscription(results);
         const words = extractWords(results);
 
