@@ -287,6 +287,58 @@
   - 로컬 워커 구현(청크 병합 + GCS 업로드).
   - longRunningRecognize API 및 상태 폴링 구현.
 
+## T-20260124-020 — Longform 업로드 경로 구현 (Supabase Chunk Upload)
+- **Intent (구조적 개선 목표)**: 대용량 녹음 데이터를 Vercel 제한 없이 안전하게 업로드할 수 있도록, Supabase Storage로의 청크 업로드 경로를 제공한다. (문제: 인라인 업로드 실패 → 해결: Supabase 직접 업로드 + 청크 분할)
+- **Change (변경 사항)**:
+  - `src/lib/stt-upload.ts`: 브라우저 청크 업로드 유틸리티 추가 (manifest 포함).
+  - `src/components/audio-recorder.tsx`: 대용량 파일 업로드 분기 및 진행률 표시 추가.
+  - STT 설계 문서 환경변수 갱신.
+- **Constraints (제약 사항)**:
+  - Supabase Storage 정책 및 버킷 권한 필요.
+  - WebM 컨테이너는 단순 concat이 어려워 후속 워커 병합이 필요.
+- **Design Options (설계 옵션)**:
+  - (A) 단일 업로드: 단순하지만 대용량 실패 위험.
+  - (B) 청크 업로드: 안정적이며 재시도 용이 (선택).
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) 청크 업로드: 장시간 녹음 안정성을 우선.
+- **Acceptance (테스트/데모 기준)**:
+  - 10분 이상 녹음 파일을 청크로 업로드하고 manifest 생성 확인.
+  - 업로드 진행률 UI 표시 확인.
+- **Impact (API/Data/UX/문서 영향)**:
+  - UX: 업로드 진행률 표시.
+  - 문서: STT 환경변수 명시 갱신.
+- **Structural Quality Metric Change (구조적 품질 지표 변화)**:
+  - 응집도: 업로드 로직이 독립 유틸로 분리되어 응집도 증가.
+  - 결합도: UI-스토리지 결합도 감소.
+- **Follow-ups (후속 작업)**:
+  - 업로드 완료 후 처리 시작 엔드포인트 연결.
+  - 청크 병합 워커 구현 및 STT 연동.
+
+## T-20260124-021 — Longform STT 시작/상태 API 추가
+- **Intent (구조적 개선 목표)**: 장기 STT 파이프라인의 비동기 처리 흐름을 열기 위해, 시작/상태 조회 API를 분리한다. (문제: 동기 STT 한계 → 해결: longRunningRecognize + status polling)
+- **Change (변경 사항)**:
+  - `src/app/api/stt/start/route.ts`: GCS URI 기반 longRunningRecognize 시작 엔드포인트 추가.
+  - `src/app/api/stt/status/route.ts`: operation status 조회 및 결과 파싱 엔드포인트 추가.
+- **Constraints (제약 사항)**:
+  - `gcsUri` 생성은 워커 단계에서 수행 필요.
+  - 결과 저장(세션/트랜스크립트)은 추후 연동 필요.
+- **Design Options (설계 옵션)**:
+  - (A) 기존 `/api/stt` 확장: 경로 혼합으로 복잡도 증가.
+  - (B) `/api/stt/start`, `/api/stt/status` 분리: 역할 분리와 확장 용이 (선택).
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) 기능/책임 분리를 통해 긴 처리 흐름을 명확하게 구성.
+- **Acceptance (테스트/데모 기준)**:
+  - `gcsUri`로 start 요청 시 operationName 반환.
+  - status 요청 시 done 여부 및 결과 파싱 확인.
+- **Impact (API/Data/UX/문서 영향)**:
+  - API: longRunningRecognize 시작/상태 조회 경로 추가.
+- **Structural Quality Metric Change (구조적 품질 지표 변화)**:
+  - 응집도: STT 동기/비동기 경로 분리로 응집도 증가.
+  - 결합도: UI와 STT 처리 흐름의 결합도 감소.
+- **Follow-ups (후속 작업)**:
+  - 결과 저장과 세션 생성 흐름 연결.
+  - 폴링 UI 및 백그라운드 처리 UX 구현.
+
 
 ## T-20260118-019 — Gemini Live 기반 실시간 음성 대화 (Real-time Conversation)
 - **Intent (구조적 개선 목표)**: 텍스트나 비동기 음성 전송이 아닌, 실제 사람과 대화하는 듯한 <No-Latency> 대화 경험을 제공하여 몰입형 훈련 환경을 구축함.

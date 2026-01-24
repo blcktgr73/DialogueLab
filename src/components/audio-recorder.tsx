@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Loader2, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { uploadBlobInChunks } from '@/lib/stt-upload';
 
 interface AudioRecorderProps {
     onTranscriptionComplete?: (text: string, rawData?: any) => void;
@@ -79,6 +80,7 @@ const AudioVisualizer = ({ stream }: { stream: MediaStream | null }) => {
 
 export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [mediaBlobUrl, setMediaBlobUrl] = useState<string | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -227,9 +229,27 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
 
         try {
             setIsUploading(true);
+            setUploadProgress(null);
 
             const blob = await fetch(mediaBlobUrl).then(r => r.blob());
-            const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
+            const safeType = blob.type || 'audio/webm';
+            const file = new File([blob], 'recording.webm', { type: safeType });
+
+            const inlineLimitBytes = 4 * 1024 * 1024;
+            if (file.size > inlineLimitBytes) {
+                toast.loading('대용량 업로드를 시작합니다...');
+                const { uploadId } = await uploadBlobInChunks({
+                    blob: file,
+                    onProgress: ({ completedChunks, totalChunks }) => {
+                        const ratio = totalChunks === 0 ? 0 : completedChunks / totalChunks;
+                        setUploadProgress(Math.round(ratio * 100));
+                    },
+                });
+                toast.dismiss();
+                toast.success('업로드 완료. 전사 처리를 준비 중입니다.');
+                console.log('[Recorder] Longform upload completed:', uploadId);
+                return;
+            }
 
             const formData = new FormData();
             formData.append('file', file);
@@ -256,6 +276,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             toast.error(error.message || '변환 중 오류가 발생했습니다.');
         } finally {
             setIsUploading(false);
+            setUploadProgress(null);
         }
     };
 
@@ -329,22 +350,22 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                 <div className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-2">
                     <audio src={mediaBlobUrl} controls className="w-full h-10" />
 
-                    <div className="flex gap-2 w-full px-4 mb-2">
-                        <Button
-                            onClick={handleTranscribe}
-                            disabled={isUploading}
-                            className="flex-1"
-                            size="lg"
-                        >
-                            {isUploading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    분석 중...
-                                </>
-                            ) : (
-                                <>
-                                    <UploadCloud className="w-4 h-4 mr-2" />
-                                    전사 및 세션 생성
+                <div className="flex gap-2 w-full px-4 mb-2">
+                    <Button
+                        onClick={handleTranscribe}
+                        disabled={isUploading}
+                        className="flex-1"
+                        size="lg"
+                    >
+                        {isUploading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                {uploadProgress !== null ? `업로드 중... ${uploadProgress}%` : '분석 중...'}
+                            </>
+                        ) : (
+                            <>
+                                <UploadCloud className="w-4 h-4 mr-2" />
+                                전사 및 세션 생성
                                 </>
                             )}
                         </Button>

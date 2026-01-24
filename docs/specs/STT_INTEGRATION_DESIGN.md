@@ -39,7 +39,7 @@ To bypass Vercel limits and support longform audio while keeping recording quali
     - Returns `operationName` (ID) to Client immediately.
 7.  **Client**:
     - Enters "Processing" state.
-    - Polls Server API (`/api/stt/status?id=...`) every 5-10 seconds.
+    - Polls Server API (`/api/stt/status?name=...`) every 5-10 seconds.
 8.  **Server (Status Check)**:
     - Checks Google Operation status.
     - If done, parses result, inserts into `transcripts` DB table.
@@ -60,6 +60,7 @@ GOOGLE_CLIENT_EMAIL=...
 GOOGLE_PRIVATE_KEY=...
 GCS_BUCKET_NAME=dialoguelab-audio-upload
 SUPABASE_STT_BUCKET=audio-uploads
+NEXT_PUBLIC_SUPABASE_STT_BUCKET=audio-uploads
 ```
 
 ### 4.3. Diarization Config
