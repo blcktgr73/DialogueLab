@@ -89,7 +89,7 @@ export async function createSessionWithTranscript(fullText: string, rawData: any
                 // Push previous segment
                 transcripts.push({
                     session_id: session.id,
-                    speaker: `화자 ${currentSpeaker}`,
+                    speaker: `참석자 ${currentSpeaker}`,
                     content: currentContent.join(' '),
                     timestamp: 0,
                     transcript_index: transcriptIndex++
@@ -105,7 +105,7 @@ export async function createSessionWithTranscript(fullText: string, rawData: any
         if (currentContent.length > 0) {
             transcripts.push({
                 session_id: session.id,
-                speaker: `화자 ${currentSpeaker}`,
+                speaker: `참석자 ${currentSpeaker}`,
                 content: currentContent.join(' '),
                 timestamp: 0,
                 transcript_index: transcriptIndex++
@@ -116,7 +116,7 @@ export async function createSessionWithTranscript(fullText: string, rawData: any
         // Fallback: 전체 텍스트
         transcripts.push({
             session_id: session.id,
-            speaker: '참여자',
+            speaker: '참석자',
             content: fullText,
             timestamp: 0,
             transcript_index: 0

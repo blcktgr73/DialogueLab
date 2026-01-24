@@ -102,7 +102,7 @@ const config = {
   - Progress Bar for Upload.
   - Spinner/Progress Bar for STT Processing.
 - **Post-Processing**:
-  - Map `Speaker 1` -> `화자 1`, `Speaker 2` -> `화자 2`.
+  - Map `Speaker 1` -> `참석자 1`, `Speaker 2` -> `참석자 2`.
   - Provide "Quick Renaming" feature (already implemented via US-017).
 
 ## 6. Action Plan

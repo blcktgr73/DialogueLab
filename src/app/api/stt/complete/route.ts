@@ -67,7 +67,7 @@ function buildTranscriptRows(sessionId: string, fullText: string, words: { word:
     if (words.length === 0) {
         rows.push({
             session_id: sessionId,
-            speaker: '참여자',
+            speaker: '참석자',
             content: fullText,
             timestamp: 0,
             transcript_index: 0,
@@ -83,7 +83,7 @@ function buildTranscriptRows(sessionId: string, fullText: string, words: { word:
         if (wordInfo.speakerTag !== currentSpeaker && currentContent.length > 0) {
             rows.push({
                 session_id: sessionId,
-                speaker: `화자 ${currentSpeaker}`,
+                speaker: `참석자 ${currentSpeaker}`,
                 content: currentContent.join(' '),
                 timestamp: 0,
                 transcript_index: transcriptIndex++,
@@ -98,7 +98,7 @@ function buildTranscriptRows(sessionId: string, fullText: string, words: { word:
     if (currentContent.length > 0) {
         rows.push({
             session_id: sessionId,
-            speaker: `화자 ${currentSpeaker}`,
+            speaker: `참석자 ${currentSpeaker}`,
             content: currentContent.join(' '),
             timestamp: 0,
             transcript_index: transcriptIndex,
