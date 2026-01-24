@@ -7,32 +7,43 @@ This document outlines the architecture for implementing Multi-party Speech-to-T
 - **Vercel Serverless Limits**:
   - Request Body Size: 4.5MB. (Too small for audio files)
   - Execution Time: 10s (Hobby) / 60s (Pro). (Too short for STT processing)
+- **Longform Audio (1~2 hours)**:
+  - In-browser inline upload is infeasible at this size.
+  - WebM chunks are not trivially concat-able without container-aware tooling.
 - **Audio Processing**:
   - Google STT requires `gs://` (Google Cloud Storage) URI for files longer than 1 minute.
   - Processing time is approximately 50-100% of audio length.
+  - Long-running recognition requires asynchronous flow and polling.
 
 ## 3. Architecture Strategy
 
-To bypass Vercel limits, we will implement the **"Direct-to-Cloud"** pattern.
+To bypass Vercel limits and support longform audio while keeping recording quality, we will implement a **"Direct-to-Storage + GCS Bridge"** pattern.
 
-### 3.1. Storage: Google Cloud Storage (GCS)
-We need a dedicated GCS Bucket (private) to temporarily store audio files.
-- **Why GCS?**: Google STT API reads most efficiently from GCS.
+### 3.1. Storage: Supabase (Primary) + GCS (Temporary)
+- **Supabase Storage**: Primary upload target (cost-effective, local server).
+- **GCS Bucket**: Temporary staging for Google STT (`gs://` URI requirement).
+- **Why GCS?**: Google STT longRunningRecognize requires `gs://` for longform.
 
-### 3.2. Data Flow
-1.  **Client**: User selects file. Requests `Signed Upload URL` from Server.
-2.  **Server**: Generates GCS Signed URL (PUT) and returns to Client.
-3.  **Client**: Uploads file directly to GCS (bypassing Vercel).
-4.  **Client**: Notifies Server "Upload Complete" with file path.
-5.  **Server**:
-    - Calls Google STT `longRunningRecognize` API with `enableSpeakerDiarization`.
+### 3.2. Data Flow (Longform)
+1.  **Client**: User completes recording. Requests `Signed Upload URL` from Server.
+2.  **Server**: Generates Supabase signed upload URL and returns to Client.
+3.  **Client**: Uploads file directly to Supabase Storage (bypassing Vercel).
+    - If resumable upload is unavailable, upload in chunks to `uploads/<sessionId>/<seq>.webm`.
+4.  **Client**: Notifies Server "Upload Complete" with file path(s).
+5.  **Worker (Local Server)**:
+    - Downloads Supabase object(s).
+    - Merges chunks into a single file (container-aware, e.g., ffmpeg remux).
+    - Uploads the merged file to GCS (temporary).
+6.  **Server**:
+    - Calls Google STT `longRunningRecognize` with `gs://` URI and diarization config.
     - Returns `operationName` (ID) to Client immediately.
-6.  **Client**:
+7.  **Client**:
     - Enters "Processing" state.
     - Polls Server API (`/api/stt/status?id=...`) every 5-10 seconds.
-7.  **Server (Status Check)**:
+8.  **Server (Status Check)**:
     - Checks Google Operation status.
     - If done, parses result, inserts into `transcripts` DB table.
+    - Deletes temporary GCS file (cost control).
     - Returns "Completed" to Client.
 
 ## 4. Implementation Details
@@ -40,6 +51,7 @@ We need a dedicated GCS Bucket (private) to temporarily store audio files.
 ### 4.1. Libraries
 - `@google-cloud/speech`
 - `@google-cloud/storage`
+- `ffmpeg` (local worker for container-safe merge)
 
 ### 4.2. Environment Variables
 ```env
@@ -47,6 +59,7 @@ GOOGLE_PROJECT_ID=...
 GOOGLE_CLIENT_EMAIL=...
 GOOGLE_PRIVATE_KEY=...
 GCS_BUCKET_NAME=dialoguelab-audio-upload
+SUPABASE_STT_BUCKET=audio-uploads
 ```
 
 ### 4.3. Diarization Config
@@ -63,10 +76,19 @@ const config = {
 };
 ```
 
+### 4.4. Failure Modes & Recovery
+- **Upload interrupted**: Resume via Supabase resumable upload or retry missing chunks.
+- **Chunk merge fails**: Re-run merge with container-aware pipeline (ffmpeg concat).
+- **STT long-running time**: UI must show "Processing" with periodic polling.
+- **Cost control**: Delete temporary GCS object after processing completes or fails.
+
 ## 5. UI/UX
+- **Audio Upload / Recorder**:
+  - Show longform upload state + progress.
+  - If using chunk upload, show part-based progress.
 - **TranscriptUploader**:
   - Add "Audio" tab.
-  - File Dropzone accepts `.mp3, .wav, .m4a`.
+  - File Dropzone accepts `.mp3, .wav, .m4a` (and `webm` for recorder).
   - Progress Bar for Upload.
   - Spinner/Progress Bar for STT Processing.
 - **Post-Processing**:
@@ -74,8 +96,10 @@ const config = {
   - Provide "Quick Renaming" feature (already implemented via US-017).
 
 ## 6. Action Plan
-1.  Setup GCS Bucket & Service Account.
-2.  Implement `upload-url` Server Action.
-3.  Implement `start-transcription` Server Action.
-4.  Implement `check-status` Server Action/Route.
-5.  Update Frontend to handle the async flow.
+1.  Setup GCS Bucket & Service Account (temporary storage).
+2.  Create Supabase Storage bucket for audio uploads.
+3.  Implement `upload-url` Server Action (Supabase signed URL).
+4.  Implement local worker to merge chunks and upload to GCS.
+5.  Implement `start-transcription` Server Action (longRunningRecognize).
+6.  Implement `check-status` Server Action/Route.
+7.  Update Frontend to handle longform upload + async flow.

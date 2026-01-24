@@ -29,3 +29,21 @@
 - **결과 (Consequences)**:
   - 서버에서는 FFmpeg 의존성을 제거하여 경량화.
   - Safari 등 일부 브라우저 호환성을 위한 클라이언트 측 폴리필(Polyfill) 또는 라이브러리 필요.
+
+## ADR-003: Longform STT 파이프라인 (Supabase Storage + GCS Bridge)
+- **상태 (Status)**: 결정됨 (Decided)
+- **날짜 (Date)**: 2026-01-24
+- **맥락 (Context)**:
+  - 1~2시간 길이의 대화 녹음이 필요함.
+  - Vercel 4.5MB 제한 및 동기 STT 호출 한계로 인해 인라인 업로드 방식은 실패.
+  - Google STT longRunningRecognize는 `gs://` URI를 요구함.
+  - Supabase Storage는 비용/운영 효율을 위해 주요 저장소로 유지해야 함.
+- **결정 (Decision)**:
+  - **Primary Storage**: Supabase Storage에 직접 업로드 (signed URL).
+  - **Temporary Bridge**: 로컬 워커에서 파일 병합 후 GCS에 임시 업로드.
+  - **STT 처리**: Google STT `longRunningRecognize`로 비동기 처리 + 상태 폴링.
+  - **Cost Control**: STT 완료 후 GCS 임시 파일 삭제.
+- **결과 (Consequences)**:
+  - STT 파이프라인은 비동기 처리 + 폴링 UX 필요.
+  - 로컬 워커에 ffmpeg가 필요하며, 병합 실패 시 재시도 전략이 필요.
+  - Supabase Storage 비용은 유지하면서 Google STT 요구사항을 충족.

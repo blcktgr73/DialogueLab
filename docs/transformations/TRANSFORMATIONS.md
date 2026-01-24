@@ -258,6 +258,35 @@
   - `src/components/new-session-card-content.tsx` (레이아웃 개선).
   - `src/components/simulation-setup-dialog.tsx` (용어 변경).
 
+## T-20260124-019 — Longform STT 파이프라인 설계 (Supabase + GCS Bridge)
+- **Intent (구조적 개선 목표)**: 1~2시간 길이의 음성 녹음을 품질 저하 없이 처리할 수 있도록, Vercel 제한을 우회하는 장기 STT 파이프라인을 설계한다. (문제: 대용량 업로드/동기 STT 실패 → 맥락: Vercel 제한 + Google STT `gs://` 요구 → 해결: Supabase 업로드 + GCS 임시 업로드 + longRunningRecognize)
+- **Change (변경 사항)**:
+  - STT 장기 처리 흐름 문서화 (`docs/specs/STT_INTEGRATION_DESIGN.md` 업데이트).
+  - 아키텍처 결정 기록 추가 (ADR-003).
+- **Constraints (제약 사항)**:
+  - Vercel 4.5MB 요청 제한 및 짧은 실행 시간.
+  - Google STT longRunningRecognize의 `gs://` URI 요구.
+  - Supabase Storage는 비용상 주요 저장소로 유지 필요.
+- **Design Options (설계 옵션)**:
+  - (A) GCS Direct Upload: 클라이언트가 GCS에 직접 업로드 → STT 최적, Supabase 비용절감 목표와 충돌.
+  - (B) Supabase Primary + GCS Temp Bridge: Supabase 업로드 후 워커가 병합/임시 업로드 → 비용 최적 + STT 요구 충족 (선택).
+  - (C) Chunked STT: 청크별 STT 후 병합 → 화자 분리/문맥 품질 저하.
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) Supabase Primary + GCS Temp Bridge: 비용과 품질의 균형, 장기 STT 요구 충족.
+- **Acceptance (테스트/데모 기준)**:
+  - 1시간 오디오 업로드 후 STT 처리 성공.
+  - 완료 시 transcripts DB에 저장되고 UI에서 조회 가능.
+- **Impact (API/Data/UX/문서 영향)**:
+  - 문서: STT 설계/ADR 업데이트.
+  - 향후 API: 업로드 URL 발급, STT 시작, 상태 조회 엔드포인트 추가 예정.
+- **Structural Quality Metric Change (구조적 품질 지표 변화)**:
+  - 응집도: STT 파이프라인 책임이 명확히 분리되어 응집도 증가.
+  - 결합도: Vercel API 의존 감소로 결합도 감소.
+- **Follow-ups (후속 작업)**:
+  - Supabase Storage 버킷/정책 설정.
+  - 로컬 워커 구현(청크 병합 + GCS 업로드).
+  - longRunningRecognize API 및 상태 폴링 구현.
+
 
 ## T-20260118-019 — Gemini Live 기반 실시간 음성 대화 (Real-time Conversation)
 - **Intent (구조적 개선 목표)**: 텍스트나 비동기 음성 전송이 아닌, 실제 사람과 대화하는 듯한 <No-Latency> 대화 경험을 제공하여 몰입형 훈련 환경을 구축함.
