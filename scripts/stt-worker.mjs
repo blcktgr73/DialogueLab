@@ -25,6 +25,12 @@ function requireEnv(name) {
     return value;
 }
 
+function getErrorMessage(error) {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    return 'Unknown error';
+}
+
 function sanitizePrivateKey(key) {
     return key.replace(/\\n/g, '\n');
 }
@@ -105,9 +111,27 @@ async function uploadToGcs({ bucketName, filePath, destination, credentials, pro
     return `gs://${bucketName}/${destination}`;
 }
 
+async function startSttIfRequested({ startUrl, gcsUri }) {
+    if (!startUrl) return null;
+    const response = await fetch(startUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ gcsUri }),
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`STT start failed: ${response.status} ${text}`);
+    }
+
+    const data = await response.json();
+    return data?.operationName || null;
+}
+
 async function main() {
     const args = parseArgs(process.argv.slice(2));
     const prefix = args.prefix;
+    const startUrl = args['start-url'];
     if (!prefix) {
         throw new Error('Usage: node scripts/stt-worker.mjs --prefix <storage-prefix>');
     }
@@ -146,10 +170,13 @@ async function main() {
         projectId,
     });
 
+    const operationName = await startSttIfRequested({ startUrl, gcsUri });
+
     console.log(
         JSON.stringify(
             {
                 gcsUri,
+                operationName,
                 mergedPath: outputPath,
                 chunkCount: chunks.length,
                 prefix,
@@ -161,6 +188,6 @@ async function main() {
 }
 
 main().catch((error) => {
-    console.error('[stt-worker] Failed:', error.message);
+    console.error('[stt-worker] Failed:', getErrorMessage(error));
     process.exit(1);
 });

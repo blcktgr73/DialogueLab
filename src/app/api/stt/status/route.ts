@@ -52,10 +52,10 @@ export async function GET(req: NextRequest) {
             details: response?.results ?? null,
             words: wordsInfo,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[STT Status] Error:', error);
         return NextResponse.json(
-            { error: error.message || 'STT 상태 조회 중 오류가 발생했습니다.' },
+            { error: error instanceof Error ? error.message : 'STT 상태 조회 중 오류가 발생했습니다.' },
             { status: 500 }
         );
     }

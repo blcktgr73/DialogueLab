@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             operationName: operation?.name,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[STT Start] Error:', error);
         return NextResponse.json(
-            { error: error.message || 'STT 시작 중 오류가 발생했습니다.' },
+            { error: error instanceof Error ? error.message : 'STT 시작 중 오류가 발생했습니다.' },
             { status: 500 }
         );
     }

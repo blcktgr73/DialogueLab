@@ -109,7 +109,7 @@ const config = {
 
 ## 7. Local Worker Interface (CLI)
 ```bash
-node scripts/stt-worker.mjs --prefix recordings/<upload-id>
+node scripts/stt-worker.mjs --prefix recordings/<upload-id> --start-url http://localhost:3000/api/stt/start
 ```
 
 **Inputs (env)**:
@@ -122,6 +122,7 @@ node scripts/stt-worker.mjs --prefix recordings/<upload-id>
 ```json
 {
   "gcsUri": "gs://bucket/recordings/<upload-id>/merged.webm",
+  "operationName": "projects/.../operations/...",
   "mergedPath": "/tmp/.../merged.webm",
   "chunkCount": 12,
   "prefix": "recordings/<upload-id>"
