@@ -32,7 +32,7 @@ function getErrorMessage(error) {
 }
 
 function sanitizePrivateKey(key) {
-    return key.replace(/^"|"$/g, '').replace(/\\n/g, '\n');
+    return key.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
 }
 
 function ensureDir(dir) {
@@ -123,6 +123,9 @@ function mergeWithFfmpeg({ chunks, outputPath, tempDir }) {
 }
 
 async function uploadToGcs({ bucketName, filePath, destination, credentials, projectId }) {
+    const keyHeader = credentials.private_key?.split('\n')[0] || '';
+    const keyFooter = credentials.private_key?.split('\n').slice(-1)[0] || '';
+    console.log(`[stt-worker] GCS creds: project=${projectId}, keyHeader=${keyHeader}, keyFooter=${keyFooter}`);
     const storage = new Storage({ credentials, projectId });
     await storage.bucket(bucketName).upload(filePath, {
         destination,
