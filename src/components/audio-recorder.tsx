@@ -95,6 +95,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
     const chunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const router = useRouter();
+    const workerUrl = process.env.NEXT_PUBLIC_STT_WORKER_URL || '';
 
     // Timer Logic: Dependent on isRecording state to be robust
     useEffect(() => {
@@ -229,6 +230,21 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
         setRecordingTime(0);
     };
 
+    const startWorker = async (uploadId: string) => {
+        if (!workerUrl) return null;
+        const response = await fetch(workerUrl, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ prefix: uploadId }),
+        });
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || '워커 실행 실패');
+        }
+        const data = await response.json();
+        return data?.operationName as string | undefined;
+    };
+
     const handleTranscribe = async () => {
         if (!mediaBlobUrl) return;
 
@@ -251,9 +267,25 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                     },
                 });
                 toast.dismiss();
-                toast.success('업로드 완료. 워커 실행 후 operationName을 입력해주세요.');
+                toast.success('업로드 완료. 워커 실행을 시작합니다.');
                 console.log('[Recorder] Longform upload completed:', uploadId);
                 setLongformUploadId(uploadId);
+                if (workerUrl) {
+                    try {
+                        const opName = await startWorker(uploadId);
+                        if (opName) {
+                            setOperationName(opName);
+                            await handleCompleteLongform(opName);
+                        } else {
+                            toast.error('operationName을 받지 못했습니다.');
+                        }
+                    } catch (error: unknown) {
+                        console.error(error);
+                        toast.error(error instanceof Error ? error.message : '워커 실행 실패');
+                    }
+                } else {
+                    toast.info('worker URL이 없어 수동으로 operationName을 입력해야 합니다.');
+                }
                 return;
             }
 
@@ -299,8 +331,9 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
         }>;
     };
 
-    const handleCompleteLongform = async () => {
-        if (!operationName) {
+    const handleCompleteLongform = async (opNameOverride?: string) => {
+        const opName = (opNameOverride || operationName).trim();
+        if (!opName) {
             toast.error('operationName을 입력해주세요.');
             return;
         }
@@ -309,7 +342,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             toast.loading('전사 상태를 확인 중입니다...');
             let done = false;
             while (!done) {
-                const status = await pollLongformStatus(operationName.trim());
+                const status = await pollLongformStatus(opName);
                 if (status.done) {
                     done = true;
                     break;
@@ -320,7 +353,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             const completeResponse = await fetch('/api/stt/complete', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ operationName: operationName.trim() }),
+                body: JSON.stringify({ operationName: opName }),
             });
             const data = await completeResponse.json();
             if (!completeResponse.ok) {

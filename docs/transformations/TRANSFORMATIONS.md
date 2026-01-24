@@ -404,6 +404,28 @@
   - 응집도: 클라이언트 완료 처리 흐름이 명시되어 응집도 증가.
   - 결합도: 워커-클라이언트 연결부가 명확해져 결합도 감소.
 
+## T-20260124-025 — 워커 자동 실행 연결
+- **Intent (구조적 개선 목표)**: 업로드 완료 후 워커 실행을 자동화하여 수동 작업을 줄인다. (문제: 수동 워커 실행/입력 → 해결: 로컬 워커 서버 + 클라이언트 호출)
+- **Change (변경 사항)**:
+  - `scripts/stt-worker-server.mjs`: 워커 실행 HTTP 래퍼 추가.
+  - `src/components/audio-recorder.tsx`: 업로드 완료 시 워커 URL 호출 및 자동 폴링 연결.
+  - STT 설계 문서 업데이트.
+- **Constraints (제약 사항)**:
+  - 로컬 환경에서만 워커 서버 실행 가능.
+  - `NEXT_PUBLIC_STT_WORKER_URL` 환경변수 필요.
+- **Design Options (설계 옵션)**:
+  - (A) 수동 워커 실행 유지.
+  - (B) 로컬 워커 서버 자동화 (선택).
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) 사용자 운영 부담 최소화.
+- **Acceptance (테스트/데모 기준)**:
+  - 업로드 완료 후 자동으로 워커 실행 → operationName 수신 → 완료 처리 진행.
+- **Impact (API/Data/UX/문서 영향)**:
+  - UX: 워커 수동 입력 단계 감소.
+- **Structural Quality Metric Change (구조적 품질 지표 변화)**:
+  - 응집도: 자동화 흐름 도입으로 파이프라인 완결성 증가.
+  - 결합도: 환경변수로 외부 워커 연결부 분리.
+
 
 ## T-20260118-019 — Gemini Live 기반 실시간 음성 대화 (Real-time Conversation)
 - **Intent (구조적 개선 목표)**: 텍스트나 비동기 음성 전송이 아닌, 실제 사람과 대화하는 듯한 <No-Latency> 대화 경험을 제공하여 몰입형 훈련 환경을 구축함.

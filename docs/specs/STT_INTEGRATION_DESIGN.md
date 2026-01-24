@@ -114,6 +114,16 @@ const config = {
 node scripts/stt-worker.mjs --prefix recordings/<upload-id> --start-url http://localhost:3000/api/stt/start
 ```
 
+### Worker Server (Optional)
+```bash
+node scripts/stt-worker-server.mjs
+```
+
+**Client config**:
+```env
+NEXT_PUBLIC_STT_WORKER_URL=http://localhost:8787/stt/start
+```
+
 **Inputs (env)**:
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_STT_BUCKET`
