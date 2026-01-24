@@ -126,7 +126,12 @@ async function uploadToGcs({ bucketName, filePath, destination, credentials, pro
     const keyHeader = credentials.private_key?.split('\n')[0] || '';
     const keyFooter = credentials.private_key?.split('\n').slice(-1)[0] || '';
     console.log(`[stt-worker] GCS creds: project=${projectId}, keyHeader=${keyHeader}, keyFooter=${keyFooter}`);
-    const storage = new Storage({ credentials, projectId });
+    let storage;
+    try {
+        storage = new Storage({ credentials, projectId });
+    } catch (error) {
+        throw new Error(`gcs client init failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
     await storage.bucket(bucketName).upload(filePath, {
         destination,
         resumable: true,
@@ -186,6 +191,9 @@ async function main() {
     const outputPath = path.join(tempDir, 'merged.webm');
     mergeWithFfmpeg({ chunks, outputPath, tempDir });
 
+    const keyHeader = privateKey.split('\n')[0] || '';
+    const keyFooter = privateKey.split('\n').slice(-1)[0] || '';
+    console.log(`[stt-worker] GCS key check: header=${keyHeader}, footer=${keyFooter}, length=${privateKey.length}`);
     console.log('[stt-worker] uploading merged file to GCS');
     const destination = `${prefix.replace(/\/$/, '')}/merged.webm`;
     const gcsUri = await uploadToGcs({
