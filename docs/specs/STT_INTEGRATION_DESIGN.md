@@ -61,6 +61,8 @@ GOOGLE_PRIVATE_KEY=...
 GCS_BUCKET_NAME=dialoguelab-audio-upload
 SUPABASE_STT_BUCKET=audio-uploads
 NEXT_PUBLIC_SUPABASE_STT_BUCKET=audio-uploads
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 ### 4.3. Diarization Config
@@ -104,3 +106,24 @@ const config = {
 5.  Implement `start-transcription` Server Action (longRunningRecognize).
 6.  Implement `check-status` Server Action/Route.
 7.  Update Frontend to handle longform upload + async flow.
+
+## 7. Local Worker Interface (CLI)
+```bash
+node scripts/stt-worker.mjs --prefix recordings/<upload-id>
+```
+
+**Inputs (env)**:
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_STT_BUCKET`
+- `GCS_BUCKET_NAME`
+- `GOOGLE_PROJECT_ID`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`
+
+**Output (stdout JSON)**:
+```json
+{
+  "gcsUri": "gs://bucket/recordings/<upload-id>/merged.webm",
+  "mergedPath": "/tmp/.../merged.webm",
+  "chunkCount": 12,
+  "prefix": "recordings/<upload-id>"
+}
+```

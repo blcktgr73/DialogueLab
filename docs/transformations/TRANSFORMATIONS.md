@@ -339,6 +339,29 @@
   - 결과 저장과 세션 생성 흐름 연결.
   - 폴링 UI 및 백그라운드 처리 UX 구현.
 
+## T-20260124-022 — Local STT 워커 인터페이스 추가
+- **Intent (구조적 개선 목표)**: Supabase 청크 업로드 후 GCS 업로드로 이어지는 브릿지 작업을 분리하여, 장기 STT 파이프라인을 독립적으로 운영 가능하게 한다. (문제: Vercel에서 병합/업로드 불가 → 해결: 로컬 워커)
+- **Change (변경 사항)**:
+  - `scripts/stt-worker.mjs`: 청크 다운로드 → ffmpeg 병합 → GCS 업로드 CLI 추가.
+  - STT 설계 문서에 워커 인터페이스 및 환경변수 추가.
+- **Constraints (제약 사항)**:
+  - `ffmpeg` 로컬 설치 필요.
+  - Supabase Service Role Key 필요.
+- **Design Options (설계 옵션)**:
+  - (A) 워커를 서버 내부에 통합: Vercel 제한에 막힘.
+  - (B) 로컬 워커 분리: 책임 분리 및 대용량 처리 가능 (선택).
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) 로컬 워커 분리로 대용량 처리 및 비용 절감 목표 달성.
+- **Acceptance (테스트/데모 기준)**:
+  - `--prefix` 입력 시 GCS URI가 출력됨.
+- **Impact (API/Data/UX/문서 영향)**:
+  - 운영: 워커 실행 환경 필요.
+- **Structural Quality Metric Change (구조적 품질 지표 변화)**:
+  - 응집도: STT 처리 흐름의 책임 분리로 응집도 증가.
+  - 결합도: Vercel API와의 결합도 감소.
+- **Follow-ups (후속 작업)**:
+  - 워커 결과를 `/api/stt/start` 호출과 연결.
+
 
 ## T-20260118-019 — Gemini Live 기반 실시간 음성 대화 (Real-time Conversation)
 - **Intent (구조적 개선 목표)**: 텍스트나 비동기 음성 전송이 아닌, 실제 사람과 대화하는 듯한 <No-Latency> 대화 경험을 제공하여 몰입형 훈련 환경을 구축함.
