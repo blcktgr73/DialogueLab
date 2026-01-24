@@ -62,6 +62,25 @@ function extractWords(results: unknown[]): { word: string; speakerTag: string }[
     return extracted;
 }
 
+function extractAllWords(results: unknown[]): { word: string; speakerTag: string }[] {
+    const extracted: { word: string; speakerTag: string }[] = [];
+    for (const result of results) {
+        const alternatives = asArray(asRecord(result).alternatives);
+        const firstAlt = alternatives[0];
+        const words = asArray(asRecord(firstAlt).words);
+        for (const wordInfo of words) {
+            const record = asRecord(wordInfo);
+            const word = getString(record.word) ?? '';
+            const speakerTagNum = getNumber(record.speakerTag);
+            const speakerTag = speakerTagNum ? String(speakerTagNum) : '1';
+            if (word) {
+                extracted.push({ word, speakerTag });
+            }
+        }
+    }
+    return extracted;
+}
+
 function buildTranscriptRows(sessionId: string, fullText: string, words: { word: string; speakerTag: string }[]) {
     const rows: TranscriptRow[] = [];
     if (words.length === 0) {
@@ -165,6 +184,26 @@ export async function POST(req: NextRequest) {
         const results = asArray(resultRecord.results);
         const fullText = extractTranscription(results);
         const words = extractWords(results);
+
+        if (process.env.STT_DEBUG === '1') {
+            const allWords = extractAllWords(results);
+            const speakerTagCounts: Record<string, number> = {};
+            let underscoreCount = 0;
+            const wordSamples: string[] = [];
+            for (const wordInfo of allWords) {
+                const tag = wordInfo.speakerTag || 'unknown';
+                speakerTagCounts[tag] = (speakerTagCounts[tag] || 0) + 1;
+                if (wordInfo.word.includes('_')) underscoreCount += 1;
+                if (wordInfo.word && wordSamples.length < 12) wordSamples.push(wordInfo.word);
+            }
+            console.error('[STT Complete][Debug] results', results.length,
+                'words(all)', allWords.length,
+                'words(last)', words.length,
+                'speakerTags', speakerTagCounts,
+                'underscoreWords', underscoreCount,
+                'samples', wordSamples
+            );
+        }
 
         const { data: session, error: sessionError } = await supabase
             .from('sessions')

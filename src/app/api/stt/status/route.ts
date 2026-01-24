@@ -62,12 +62,45 @@ export async function GET(req: NextRequest) {
             ? ((firstAlt as Record<string, unknown>).words as unknown[] | undefined) ?? []
             : [];
 
+        if (process.env.STT_DEBUG === '1') {
+            const allWords = results.flatMap((result) => {
+                if (!result || typeof result !== 'object') return [];
+                const alternatives = (result as Record<string, unknown>).alternatives;
+                if (!Array.isArray(alternatives) || alternatives.length === 0) return [];
+                const alt = alternatives[0] as Record<string, unknown>;
+                const words = alt.words as unknown[] | undefined;
+                return Array.isArray(words) ? words : [];
+            });
+            const speakerTagCounts: Record<string, number> = {};
+            let underscoreCount = 0;
+            const wordSamples: string[] = [];
+            for (const wordInfo of allWords) {
+                if (!wordInfo || typeof wordInfo !== 'object') continue;
+                const record = wordInfo as Record<string, unknown>;
+                const word = typeof record.word === 'string' ? record.word : '';
+                const tag = record.speakerTag ? String(record.speakerTag) : 'unknown';
+                speakerTagCounts[tag] = (speakerTagCounts[tag] || 0) + 1;
+                if (word.includes('_')) underscoreCount += 1;
+                if (word && wordSamples.length < 12) wordSamples.push(word);
+            }
+            console.error('[STT Status][Debug] results', results.length,
+                'words(all)', allWords.length,
+                'words(last)', Array.isArray(wordsInfo) ? wordsInfo.length : 0,
+                'speakerTags', speakerTagCounts,
+                'underscoreWords', underscoreCount,
+                'samples', wordSamples
+            );
+        }
+
         return NextResponse.json({
             done: progress.done,
             metadata: progress.metadata ?? null,
             text: transcription ?? null,
             details: results ?? null,
             words: wordsInfo,
+            ...(process.env.STT_DEBUG === '1'
+                ? { debug: { resultsCount: results.length, lastWordsCount: Array.isArray(wordsInfo) ? wordsInfo.length : 0 } }
+                : {}),
         });
     } catch (error: unknown) {
         console.error('[STT Status] Error:', error);
