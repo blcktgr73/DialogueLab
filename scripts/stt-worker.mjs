@@ -77,32 +77,48 @@ function mergeWithFfmpeg({ chunks, outputPath, tempDir }) {
     const content = chunks.map((chunkPath) => `file '${chunkPath.replace(/'/g, `'\\''`)}'`).join('\n');
     fs.writeFileSync(listPath, content);
 
-    const result = spawnSync(
-        'ffmpeg',
+    const baseArgs = [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-f',
+        'concat',
+        '-safe',
+        '0',
+        '-i',
+        listPath,
+    ];
+
+    const tryMerge = (args, label) => {
+        const result = spawnSync('ffmpeg', args, { stdio: 'pipe' });
+        if (result.error) {
+            throw new Error(`ffmpeg exec failed (${label}): ${result.error.message}`);
+        }
+        if (result.status !== 0) {
+            const stderr = result.stderr?.toString() || '';
+            return { ok: false, error: stderr || `ffmpeg merge failed (${label})` };
+        }
+        return { ok: true };
+    };
+
+    const copyResult = tryMerge([...baseArgs, '-c', 'copy', outputPath], 'copy');
+    if (copyResult.ok) return;
+
+    const reencodeResult = tryMerge(
         [
-            '-hide_banner',
-            '-loglevel',
-            'error',
-            '-f',
-            'concat',
-            '-safe',
-            '0',
-            '-i',
-            listPath,
-            '-c',
-            'copy',
+            ...baseArgs,
+            '-c:a',
+            'flac',
+            '-ar',
+            '16000',
+            '-ac',
+            '1',
             outputPath,
         ],
-        { stdio: 'pipe' }
+        'reencode'
     );
-
-    if (result.error) {
-        throw new Error(`ffmpeg exec failed: ${result.error.message}`);
-    }
-    if (result.status !== 0) {
-        const stderr = result.stderr?.toString() || '';
-        const message = stderr ? `ffmpeg merge failed: ${stderr}` : 'ffmpeg merge failed';
-        throw new Error(message);
+    if (!reencodeResult.ok) {
+        throw new Error(`ffmpeg merge failed: ${copyResult.error}\n${reencodeResult.error}`);
     }
 }
 
