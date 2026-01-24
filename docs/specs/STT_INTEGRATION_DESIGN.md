@@ -40,6 +40,7 @@ To bypass Vercel limits and support longform audio while keeping recording quali
 7.  **Client**:
     - Enters "Processing" state.
     - Polls Server API (`/api/stt/status?name=...`) every 5-10 seconds.
+    - When done, POSTs `/api/stt/complete` to persist session/transcripts.
 8.  **Server (Status Check)**:
     - Checks Google Operation status.
     - If done, parses result, inserts into `transcripts` DB table.
@@ -105,7 +106,8 @@ const config = {
 4.  Implement local worker to merge chunks and upload to GCS.
 5.  Implement `start-transcription` Server Action (longRunningRecognize).
 6.  Implement `check-status` Server Action/Route.
-7.  Update Frontend to handle longform upload + async flow.
+7.  Implement `complete` endpoint to persist transcripts.
+8.  Update Frontend to handle longform upload + async flow.
 
 ## 7. Local Worker Interface (CLI)
 ```bash

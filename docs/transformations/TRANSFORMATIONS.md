@@ -362,6 +362,29 @@
 - **Follow-ups (후속 작업)**:
   - 워커 결과를 `/api/stt/start` 호출과 연결.
 
+## T-20260124-023 — STT 결과 저장 API 추가
+- **Intent (구조적 개선 목표)**: longRunningRecognize 결과를 세션/트랜스크립트로 저장하는 서버 측 엔드포인트를 추가하여, 비동기 STT 파이프라인을 완성한다. (문제: 결과 저장 경로 부재 → 해결: complete API)
+- **Change (변경 사항)**:
+  - `src/app/api/stt/complete/route.ts`: STT 완료 결과를 저장하는 엔드포인트 추가.
+  - STT 설계 문서 업데이트.
+- **Constraints (제약 사항)**:
+  - 사용자 인증 필요 (세션 쿠키).
+  - 결과의 speaker diarization 정보가 없을 경우 기본 화자 처리.
+- **Design Options (설계 옵션)**:
+  - (A) status endpoint에서 자동 저장: 조회와 저장의 결합.
+  - (B) complete endpoint 분리: 역할 분리 및 제어 용이 (선택).
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) 상태 조회/저장 분리로 흐름 관리 용이.
+- **Acceptance (테스트/데모 기준)**:
+  - `operationName`으로 요청 시 세션과 트랜스크립트가 생성됨.
+- **Impact (API/Data/UX/문서 영향)**:
+  - API: `/api/stt/complete` 추가.
+- **Structural Quality Metric Change (구조적 품질 지표 변화)**:
+  - 응집도: STT 완료 처리 책임 분리로 응집도 증가.
+  - 결합도: 클라이언트-서버 역할 분리로 결합도 감소.
+- **Follow-ups (후속 작업)**:
+  - 클라이언트 폴링 완료 시 `complete` 호출 연결.
+
 
 ## T-20260118-019 — Gemini Live 기반 실시간 음성 대화 (Real-time Conversation)
 - **Intent (구조적 개선 목표)**: 텍스트나 비동기 음성 전송이 아닌, 실제 사람과 대화하는 듯한 <No-Latency> 대화 경험을 제공하여 몰입형 훈련 환경을 구축함.
