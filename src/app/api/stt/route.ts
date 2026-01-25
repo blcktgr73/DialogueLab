@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSpeechClient, checkSpeechConfig } from '@/lib/google-speech';
+import { getSttRequestConfig } from '@/lib/stt-config';
 
 // Node.js 런타임 강제 (Google Cloud SDK 사용을 위해)
 export const runtime = 'nodejs';
@@ -45,15 +46,7 @@ export async function POST(req: NextRequest) {
             audio: {
                 content: audioBytes,
             },
-            config: {
-                encoding: 'WEBM_OPUS' as const, // WebM Opus (Browser MediaRecorder Default)
-                sampleRateHertz: 48000, // Opus 기본 샘플 레이트 (보통 48kHz)
-                languageCode: 'ko-KR', // 한국어
-                enableSpeakerDiarization: true, // 화자 분리 활성화
-                minSpeakerCount: 2, // 최소 화자
-                maxSpeakerCount: 4, // 최대 화자 (예상)
-                model: 'latest_long', // 긴 대화 모델 (가능하다면)
-            },
+            config: getSttRequestConfig('short'),
         };
 
         console.log('[STT API] Requesting recognition...');

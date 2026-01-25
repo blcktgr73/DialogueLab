@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSpeechClient, checkSpeechConfig } from '@/lib/google-speech';
+import { getSttRequestConfig } from '@/lib/stt-config';
 
 export const runtime = 'nodejs';
 
@@ -47,18 +48,7 @@ export async function POST(req: NextRequest) {
 
         const request = {
             audio: { uri: gcsUri },
-            config: {
-                encoding: 'WEBM_OPUS' as const,
-                sampleRateHertz: 48000,
-                languageCode: 'ko-KR',
-                enableWordTimeOffsets: true,
-                diarizationConfig: {
-                    enableSpeakerDiarization: true,
-                    minSpeakerCount: 2,
-                    maxSpeakerCount: 10,
-                },
-                model: 'latest_long',
-            },
+            config: getSttRequestConfig('long'),
         };
 
         const [operation] = await speechClient.longRunningRecognize(request);
