@@ -203,6 +203,7 @@ async function startSttIfRequested({ startUrl, gcsUri }) {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
+            'x-stt-debug': '1',
             ...(workerToken ? { 'x-stt-worker-token': workerToken } : {}),
         },
         body: JSON.stringify({ gcsUri }),

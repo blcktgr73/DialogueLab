@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
         }
 
         const config = getSttRequestConfig('long');
-        if (process.env.STT_DEBUG === '1') {
+        const debugRequested = process.env.STT_DEBUG === '1' || req.headers.get('x-stt-debug') === '1';
+        if (debugRequested) {
             console.log('[STT Start] Config', config);
         }
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             operationName: operation?.name,
-            ...(process.env.STT_DEBUG === '1' ? { debug: { config } } : {}),
+            ...(debugRequested ? { debug: { config } } : {}),
         });
     } catch (error: unknown) {
         console.error('[STT Start] Error:', error);
