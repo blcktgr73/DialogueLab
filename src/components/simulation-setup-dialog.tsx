@@ -38,9 +38,9 @@ export function SimulationSetupDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 w-full border-violet-200 hover:bg-violet-50 hover:text-violet-700 text-violet-600">
+                <Button variant="outline" disabled className="gap-2 w-full border-violet-200 hover:bg-violet-50 hover:text-violet-700 text-violet-600">
                     <Bot className="w-4 h-4" />
-                    AI 파트너와 연습하기
+                    AI 파트너와 연습하기 (개발중)
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
