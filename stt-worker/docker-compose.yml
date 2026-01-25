@@ -3,7 +3,7 @@ version: "3.8"
 services:
   stt-worker:
     build:
-      context: /home/blcktgr/stt
+      context: /home/blcktgr/prj/DialogueLab/stt-worker
     image: dialoguelab-stt-worker
     container_name: dialoguelab-stt-worker
     working_dir: /app
@@ -11,7 +11,7 @@ services:
       - /home/blcktgr/prj/DialogueLab:/app
     command: ["node", "scripts/stt-worker-server.mjs"]
     env_file:
-      - /home/blcktgr/stt/.env
+      - /home/blcktgr/prj/DialogueLab/stt-worker/.env
     ports:
       - "8787:8787"
     restart: unless-stopped
