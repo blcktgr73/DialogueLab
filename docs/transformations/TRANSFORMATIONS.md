@@ -16,6 +16,27 @@
 
 ## Log
 
+## T-20260125-002 — STT Worker Clova 업로드 전환
+- **Intent (구조적 개선 목표)**: Google STT diarization 실패로 인해, Clova Speech 기반으로 STT 파이프라인을 전환 가능한 상태로 만든다.
+- **Change (변경 사항)**:
+  - 워커가 WebM/Opus를 M4A/AAC로 변환 후 Clova API로 직접 업로드하도록 수정.
+  - 워커 출력에 Clova 결과(JSON)를 포함.
+  - Clova 관련 env 및 로컬 검증 절차 문서화.
+- **Constraints (제약 사항)**:
+  - Clova Sync API의 파일 크기 제한(대용량은 Async 전환 필요).
+- **Design Options (설계 옵션)**:
+  - (A) 기존 GCS + Google STT 유지 → diarization 품질 한계.
+  - (B) Clova direct upload로 전환 (선택).
+- **Chosen & Rationale (선택 및 근거)**:
+  - (B) 한국어 화자 분리 성능을 최우선으로 개선.
+- **Acceptance (테스트/데모 기준)**:
+  - `scripts/stt-worker.mjs`가 Clova 결과를 반환하고, 테스트 스크립트와 동일한 diarization 결과를 얻는다.
+- **Impact (API/Data/UX/문서 영향)**:
+  - 문서: STT 마이그레이션 및 워커 실행 문서 업데이트.
+- **Follow-ups (후속 작업)**:
+  - `/api/stt/start` 및 `/api/stt/complete` 결과 매핑 적용.
+  - 장시간 파일 Async 처리 설계.
+
 ## T-20260125-001 — STT Diarization 설정 분리 (env 기반 튜닝)
 - **Intent (구조적 개선 목표)**: diarization 튜닝을 코드 변경 없이 반복할 수 있도록 설정을 외부화해 실험 효율을 높임.
 - **Change (변경 사항)**:

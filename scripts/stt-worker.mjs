@@ -3,7 +3,6 @@ import path from 'node:path';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { createClient } from '@supabase/supabase-js';
-import { Storage } from '@google-cloud/storage';
 
 function parseArgs(argv) {
     const args = {};
@@ -29,10 +28,6 @@ function getErrorMessage(error) {
     if (error instanceof Error) return error.message;
     if (typeof error === 'string') return error;
     return 'Unknown error';
-}
-
-function sanitizePrivateKey(key) {
-    return key.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
 }
 
 function ensureDir(dir) {
@@ -122,24 +117,19 @@ function mergeWithFfmpeg({ chunks, outputPath, tempDir }) {
         return { ok: true };
     };
 
-    const copyResult = tryMerge([...baseArgs, '-c', 'copy', outputPath], 'copy');
-    if (copyResult.ok) return;
-
-    const reencodeResult = tryMerge(
+    const aacResult = tryMerge(
         [
             ...baseArgs,
             '-c:a',
-            'flac',
-            '-ar',
-            '16000',
-            '-ac',
-            '1',
+            'aac',
+            '-b:a',
+            '128k',
             outputPath,
         ],
-        'reencode'
+        'aac'
     );
-    if (!reencodeResult.ok) {
-        throw new Error(`ffmpeg merge failed: ${copyResult.error}\n${reencodeResult.error}`);
+    if (!aacResult.ok) {
+        throw new Error(`ffmpeg merge failed: ${aacResult.error}`);
     }
 }
 
@@ -179,52 +169,38 @@ function inspectAudio(filePath) {
     console.error('[stt-worker] ffprobe', output.trim());
 }
 
-async function uploadToGcs({ bucketName, filePath, destination, credentials, projectId }) {
-    const keyHeader = credentials.private_key?.split('\n')[0] || '';
-    const keyFooter = credentials.private_key?.split('\n').slice(-1)[0] || '';
-    console.error(`[stt-worker] GCS creds: project=${projectId}, keyHeader=${keyHeader}, keyFooter=${keyFooter}`);
-    let storage;
-    try {
-        storage = new Storage({ credentials, projectId });
-    } catch (error) {
-        throw new Error(`gcs client init failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-    await storage.bucket(bucketName).upload(filePath, {
-        destination,
-        resumable: true,
-    });
-    return `gs://${bucketName}/${destination}`;
+function normalizeInvokeUrl(invokeUrl) {
+    if (!invokeUrl) return '';
+    return invokeUrl.replace(/\/$/, '');
 }
 
-async function startSttIfRequested({ startUrl, gcsUri }) {
-    if (!startUrl) return null;
-    const workerToken = process.env.STT_WORKER_TOKEN;
-    const response = await fetch(startUrl, {
+async function uploadToClova({ invokeUrl, secretKey, filePath, params }) {
+    const fullUrl = `${normalizeInvokeUrl(invokeUrl)}/recognizer/upload`;
+    const fileData = fs.readFileSync(filePath);
+    const blob = new Blob([fileData], { type: 'audio/m4a' });
+    const formData = new FormData();
+    formData.append('media', blob, path.basename(filePath));
+    formData.append('params', JSON.stringify(params));
+
+    const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
-            'content-type': 'application/json',
-            'x-stt-debug': '1',
-            ...(workerToken ? { 'x-stt-worker-token': workerToken } : {}),
+            'X-CLOVASPEECH-API-KEY': secretKey,
         },
-        body: JSON.stringify({ gcsUri }),
+        body: formData,
     });
 
     if (!response.ok) {
         const text = await response.text();
-        throw new Error(`STT start failed: ${response.status} ${text}`);
+        throw new Error(`Clova request failed: ${response.status} ${response.statusText}\n${text}`);
     }
 
-    const data = await response.json();
-    if (data?.debug?.config) {
-        console.error('[stt-worker] stt config', JSON.stringify(data.debug.config));
-    }
-    return data?.operationName || null;
+    return response.json();
 }
 
 async function main() {
     const args = parseArgs(process.argv.slice(2));
     const prefix = args.prefix;
-    const startUrl = args['start-url'];
     if (!prefix) {
         throw new Error('Usage: node scripts/stt-worker.mjs --prefix <storage-prefix>');
     }
@@ -232,10 +208,8 @@ async function main() {
     const supabaseUrl = requireEnv('SUPABASE_URL');
     const supabaseKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
     const supabaseBucket = process.env.SUPABASE_STT_BUCKET || 'audio-uploads';
-    const gcsBucket = requireEnv('GCS_BUCKET_NAME');
-    const projectId = requireEnv('GOOGLE_PROJECT_ID');
-    const clientEmail = requireEnv('GOOGLE_CLIENT_EMAIL');
-    const privateKey = sanitizePrivateKey(requireEnv('GOOGLE_PRIVATE_KEY'));
+    const clovaInvokeUrl = requireEnv('NAVER_CLOVA_INVOKE_URL');
+    const clovaSecretKey = requireEnv('NAVER_CLOVA_SECRET_KEY');
 
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stt-worker-'));
     ensureDir(tempDir);
@@ -253,34 +227,47 @@ async function main() {
     });
 
     console.error(`[stt-worker] merging ${chunks.length} chunks`);
-    const outputPath = path.join(tempDir, 'merged.webm');
+    const outputPath = path.join(tempDir, 'merged.m4a');
     mergeWithFfmpeg({ chunks, outputPath, tempDir });
     inspectAudio(outputPath);
 
-    const keyHeader = privateKey.split('\n')[0] || '';
-    const keyFooter = privateKey.split('\n').slice(-1)[0] || '';
-    console.error(`[stt-worker] GCS key check: header=${keyHeader}, footer=${keyFooter}, length=${privateKey.length}`);
-    console.error('[stt-worker] uploading merged file to GCS');
-    const destination = `${prefix.replace(/\/$/, '')}/merged.webm`;
-    const gcsUri = await uploadToGcs({
-        bucketName: gcsBucket,
-        filePath: outputPath,
-        destination,
-        credentials: { client_email: clientEmail, private_key: privateKey },
-        projectId,
-    });
+    const minSpeakerCount = Number.parseInt(process.env.STT_DIARIZATION_MIN_SPEAKER || '2', 10);
+    const maxSpeakerCount = Number.parseInt(process.env.STT_DIARIZATION_MAX_SPEAKER || '4', 10);
+    const languageCode = process.env.STT_LANGUAGE_CODE || 'ko-KR';
+    const domainCode = process.env.NAVER_CLOVA_DOMAIN_CODE;
 
-    console.error('[stt-worker] uploaded to GCS:', gcsUri);
-    const operationName = await startSttIfRequested({ startUrl, gcsUri });
+    const params = {
+        language: languageCode,
+        completion: 'sync',
+        callback: null,
+        userdata: domainCode ? { _ncp_DomainCode: domainCode } : undefined,
+        forbidden: null,
+        boostings: null,
+        wordAlignment: true,
+        fullText: true,
+        diarization: {
+            enable: true,
+            speakerCountMin: minSpeakerCount,
+            speakerCountMax: maxSpeakerCount,
+        },
+    };
+
+    console.error('[stt-worker] uploading merged file to Clova');
+    console.error('[stt-worker] clova params', JSON.stringify(params));
+    const clovaResult = await uploadToClova({
+        invokeUrl: clovaInvokeUrl,
+        secretKey: clovaSecretKey,
+        filePath: outputPath,
+        params,
+    });
 
     process.stdout.write(
         JSON.stringify(
             {
-                gcsUri,
-                operationName,
                 mergedPath: outputPath,
                 chunkCount: chunks.length,
                 prefix,
+                result: clovaResult,
             },
             null,
             2

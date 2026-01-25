@@ -35,8 +35,8 @@ This document outlines the migration plan from Google Cloud Speech-to-Text (STT)
     *   Downloads chunks from Supabase.
     *   **Transcoding**: Merges chunks AND converts format from **WebM/Opus** to **M4A/AAC**.
     *   **Direct Upload**: Sends POST request to Naver Clova `invoke URL` with file (multipart/form-data).
-    *   **GCS Removal**: Delete GCS upload logic.
-    *   **Response**: Receives full JSON result immediately (Sync) or Job ID (Async) depending on file size policy. Use Sync for simplicity first if file size permits.
+    *   **GCS Removal**: Remove GCS upload logic.
+    *   **Response**: Receives full JSON result immediately (Sync) for now.
 
 ## 4. Implementation Details
 
@@ -55,15 +55,23 @@ The `stt-worker` currently uses `ffmpeg` for merging. We will modify the argumen
     4.  Output result JSON to stdout for the caller.
 
 ### 4.3. Environment Variables
-*   **Keep**: `NEXT_PUBLIC_SUPABASE_URL`, `STT_WORKER_TOKEN`, `NAVER_CLOVA_INVOKE_URL`, `NAVER_CLOVA_SECRET_KEY`.
-*   **Remove**: `GOOGLE_PROJECT_ID`, `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` (if not used for other Google services like Gemini - *Wait, Gemini is used, so keep credentials but remove STT specific usage*).
+*   **Required**:
+    - `NAVER_CLOVA_INVOKE_URL`
+    - `NAVER_CLOVA_SECRET_KEY`
+    - `SUPABASE_URL`
+    - `SUPABASE_SERVICE_ROLE_KEY`
+*   **Optional**:
+    - `NAVER_CLOVA_DOMAIN_CODE`
+    - `STT_DIARIZATION_MIN_SPEAKER` (default 2)
+    - `STT_DIARIZATION_MAX_SPEAKER` (default 4)
+    - `STT_LANGUAGE_CODE` (default `ko-KR`)
 
 ## 5. Migration Steps
-1.  **Update `stt-worker.mjs`**: Implement FFmpeg conversion to m4a and direct Clova API call.
+1.  **Update `stt-worker.mjs`**: Implement FFmpeg conversion to m4a and direct Clova API call. (Done)
 2.  **Verify `stt-worker-server.mjs`**: Ensure it passes through the correct response.
-3.  **Update Client/Server API**: The Next.js API route currently handles the "Start STT" request. It needs to adapt to the new synchronous response (or async job id) returned by the worker.
-    *   *Note*: If `stt-worker` runs long (processing + upload + analysis), the http request from Next.js to Worker might time out. We should ensure the worker returns a "Job Accepted" status or the Next.js API is designed to handle long waits (or use polling).
-    *   *Simplification*: For now, let's keep the worker flow synchronous if possible (Request -> Analysis -> Return Result). Naver Clova Sync is fast.
+3.  **Update Client/Server API**: Adapt `/api/stt/start` and `/api/stt/complete` to consume Clova result payload.
+    *   If the worker response is large or slow, plan for async job handling.
+    *   For now, keep sync flow to validate diarization accuracy quickly.
 
 ## 6. Local Validation (Test Script)
 
