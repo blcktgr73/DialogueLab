@@ -1,7 +1,7 @@
 const https = require('https');
 require('dotenv').config({ path: '.env.local' });
 
-const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
     console.error("No API Key found in .env.local");
