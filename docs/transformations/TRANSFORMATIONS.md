@@ -525,3 +525,27 @@
   - `src/app/actions/gemini-live.ts` 추가.
   - `src/hooks/use-gemini-live.ts` 추가.
   - `src/components/live-session-view.tsx` 추가.
+
+## T-20260125-020 — Live 세션 안정화 및 MI 파트너 프롬프트 연결
+- **Intent (구조적 개선 목표)**: Live 세션 연결이 반복적으로 끊기는 문제를 해결하고, AI 파트너가 MI 표준화 환자 역할을 수행하도록 프롬프트를 세션 메타데이터와 연결함.
+- **Change (변경 사항)**:
+  - **Connection Stability**: `useGeminiLive` 연결/해제 로직 안정화 (재연결 루프 방지, 자동 연결 1회 시도 후 수동 연결 전환).
+  - **Retry Policy**: 자동 재시도 정책을 1회 시도로 축소, 실패 시 원인 표시 및 수동 연결 UI 제공.
+  - **Persona Prompt**: 세션 `metadata.persona` 기반으로 MI 표준화 환자 역할 프롬프트를 구성하고 `systemInstruction`으로 전달.
+  - **Routing**: 시뮬레이션 생성 후 `/sessions/:id/live`로 이동하여 대화 시작.
+  - **Doc Sync**: AI 파트너 프롬프트를 `AI_SIMULATION_DESIGN.md`에 기록.
+- **Constraints (제약 사항)**:
+  - **Live API**: WebSocket 연결 상태/종료 코드에 따라 즉시 종료되는 케이스가 존재하여, 자동 재시도 무한 루프 방지 필요.
+  - **UX**: 사용자가 원인과 상태를 이해할 수 있도록 실패 메시지 제공 필요.
+- **Decision (선택 및 근거)**:
+  - **Auto Connect 1회**: 연결 실패 시 사용자에게 명확한 수동 제어권 제공.
+  - **Prompt Binding**: persona 기반 instruction을 통해 역할 일관성 확보.
+- **Impact (영향)**:
+  - `src/app/actions/session.ts` (simulation session 생성 및 이동).
+  - `src/app/sessions/[id]/live/page.tsx` (persona 전달).
+  - `src/hooks/use-gemini-live.ts` (연결 안정화, 재시도 정책).
+  - `src/components/live-session-view.tsx` (UI 흐름, 수동 연결).
+  - `docs/specs/AI_SIMULATION_DESIGN.md` (프롬프트 기록).
+- **Follow-ups (후속 작업)**:
+  - DialogueLab-82: 마이크 아이콘과 비주얼라이저 정렬 개선.
+  - DialogueLab-83: AI 파트너 턴테이킹(끼어들기) 튜닝.
