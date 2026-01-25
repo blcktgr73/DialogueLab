@@ -144,24 +144,44 @@ function buildTranscriptRows(sessionId: string, fullText: string, words: { word:
     return rows;
 }
 
+function extractClovaSegments(result: Record<string, unknown>) {
+    const segments = asArray(result.segments);
+    return segments
+        .map((segment) => asRecord(segment))
+        .map((segment) => {
+            const speaker = asRecord(segment.speaker);
+            return {
+                speakerLabel: getString(speaker.label) ?? getString(segment.speakerLabel) ?? '1',
+                text: getString(segment.text) ?? '',
+                start: getNumber(segment.start) ?? 0,
+                end: getNumber(segment.end) ?? 0,
+            };
+        })
+        .filter((segment) => segment.text);
+}
+
+function normalizeSpeakerLabel(label: string) {
+    const trimmed = label.trim();
+    if (!trimmed) return '참석자 1';
+    if (/^\d+$/.test(trimmed)) return `참석자 ${trimmed}`;
+    if (trimmed.startsWith('SPEAKER')) {
+        const suffix = trimmed.replace(/SPEAKER\s*/i, '').trim();
+        return suffix ? `참석자 ${suffix}` : '참석자';
+    }
+    return trimmed;
+}
+
+function buildClovaRows(sessionId: string, segments: { speakerLabel: string; text: string; start: number; end: number }[]) {
+    return segments.map((segment, index) => ({
+        session_id: sessionId,
+        speaker: normalizeSpeakerLabel(segment.speakerLabel),
+        content: segment.text.trim(),
+        timestamp: Math.round(segment.start),
+        transcript_index: index,
+    }));
+}
+
 export async function POST(req: NextRequest) {
-    const configStatus = checkSpeechConfig();
-    if (!configStatus.ok) {
-        console.error('[STT Complete] Configuration Error:', configStatus.error);
-        return NextResponse.json(
-            { error: 'STT 서비스가 설정되지 않았습니다. 관리자에게 문의하세요.' },
-            { status: 500 }
-        );
-    }
-
-    const speechClient = getSpeechClient();
-    if (!speechClient) {
-        return NextResponse.json(
-            { error: 'STT 클라이언트 초기화에 실패했습니다. 자격 증명을 확인해주세요.' },
-            { status: 500 }
-        );
-    }
-
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -174,52 +194,80 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const name = body?.operationName as string | undefined;
+        const clovaResult = body?.clovaResult as Record<string, unknown> | undefined;
         const title = body?.title as string | undefined;
-        if (!name) {
+        if (!name && !clovaResult) {
             return NextResponse.json(
-                { error: 'operationName이 필요합니다.' },
+                { error: 'operationName 또는 clovaResult가 필요합니다.' },
                 { status: 400 }
             );
         }
 
-        const progress = await speechClient.checkLongRunningRecognizeProgress(name);
-        if (!progress) {
-            return NextResponse.json(
-                { error: 'STT 상태를 조회할 수 없습니다.' },
-                { status: 500 }
-            );
-        }
-
-        if (!progress.done) {
-            return NextResponse.json({
-                done: false,
-                metadata: progress.metadata ?? null,
-            });
-        }
-
-        const resultRecord = asRecord(progress.result);
-        const results = asArray(resultRecord.results);
-        const fullText = extractTranscription(results);
-        const words = extractWords(results);
-
-        if (process.env.STT_DEBUG === '1') {
-            const allWords = extractAllWords(results);
-            const speakerTagCounts: Record<string, number> = {};
-            let underscoreCount = 0;
-            const wordSamples: string[] = [];
-            for (const wordInfo of allWords) {
-                const tag = wordInfo.speakerTag || 'unknown';
-                speakerTagCounts[tag] = (speakerTagCounts[tag] || 0) + 1;
-                if (wordInfo.word.includes('_')) underscoreCount += 1;
-                if (wordInfo.word && wordSamples.length < 12) wordSamples.push(wordInfo.word);
+        let fullText = '';
+        let transcriptRows: TranscriptRow[] = [];
+        if (clovaResult) {
+            const segments = extractClovaSegments(asRecord(clovaResult));
+            fullText = segments.map((segment) => segment.text).join('\n');
+            transcriptRows = buildClovaRows('placeholder', segments);
+        } else {
+            const configStatus = checkSpeechConfig();
+            if (!configStatus.ok) {
+                console.error('[STT Complete] Configuration Error:', configStatus.error);
+                return NextResponse.json(
+                    { error: 'STT 서비스가 설정되지 않았습니다. 관리자에게 문의하세요.' },
+                    { status: 500 }
+                );
             }
-            console.error('[STT Complete][Debug] results', results.length,
-                'words(all)', allWords.length,
-                'words(last)', words.length,
-                'speakerTags', speakerTagCounts,
-                'underscoreWords', underscoreCount,
-                'samples', wordSamples
-            );
+
+            const speechClient = getSpeechClient();
+            if (!speechClient) {
+                return NextResponse.json(
+                    { error: 'STT 클라이언트 초기화에 실패했습니다. 자격 증명을 확인해주세요.' },
+                    { status: 500 }
+                );
+            }
+
+            const progress = await speechClient.checkLongRunningRecognizeProgress(name);
+            if (!progress) {
+                return NextResponse.json(
+                    { error: 'STT 상태를 조회할 수 없습니다.' },
+                    { status: 500 }
+                );
+            }
+
+            if (!progress.done) {
+                return NextResponse.json({
+                    done: false,
+                    metadata: progress.metadata ?? null,
+                });
+            }
+
+            const resultRecord = asRecord(progress.result);
+            const results = asArray(resultRecord.results);
+            fullText = extractTranscription(results);
+            const words = extractWords(results);
+
+            if (process.env.STT_DEBUG === '1') {
+                const allWords = extractAllWords(results);
+                const speakerTagCounts: Record<string, number> = {};
+                let underscoreCount = 0;
+                const wordSamples: string[] = [];
+                for (const wordInfo of allWords) {
+                    const tag = wordInfo.speakerTag || 'unknown';
+                    speakerTagCounts[tag] = (speakerTagCounts[tag] || 0) + 1;
+                    if (wordInfo.word.includes('_')) underscoreCount += 1;
+                    if (wordInfo.word && wordSamples.length < 12) wordSamples.push(wordInfo.word);
+                }
+                console.error('[STT Complete][Debug] results', results.length,
+                    'words(all)', allWords.length,
+                    'words(last)', words.length,
+                    'speakerTags', speakerTagCounts,
+                    'underscoreWords', underscoreCount,
+                    'samples', wordSamples
+                );
+            }
+
+            transcriptRows = buildTranscriptRows('placeholder', fullText, words);
         }
 
         const { data: session, error: sessionError } = await supabase
@@ -242,10 +290,10 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const transcriptRows = buildTranscriptRows(session.id, fullText, words);
+        const rows = transcriptRows.map((row) => ({ ...row, session_id: session.id }));
         const { error: transcriptError } = await supabase
             .from('transcripts')
-            .insert(transcriptRows);
+            .insert(rows);
 
         if (transcriptError) {
             console.error('[STT Complete] Transcripts insert error:', transcriptError);

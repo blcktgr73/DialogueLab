@@ -69,7 +69,7 @@ The `stt-worker` currently uses `ffmpeg` for merging. We will modify the argumen
 ## 5. Migration Steps
 1.  **Update `stt-worker.mjs`**: Implement FFmpeg conversion to m4a and direct Clova API call. (Done)
 2.  **Verify `stt-worker-server.mjs`**: Ensure it passes through the correct response.
-3.  **Update Client/Server API**: Adapt `/api/stt/start` and `/api/stt/complete` to consume Clova result payload.
+3.  **Update Client/Server API**: Adapt `/api/stt/complete` to consume Clova result payload (segments → transcripts).
     *   If the worker response is large or slow, plan for async job handling.
     *   For now, keep sync flow to validate diarization accuracy quickly.
 

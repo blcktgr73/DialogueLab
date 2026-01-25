@@ -83,8 +83,6 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [longformUploadId, setLongformUploadId] = useState<string | null>(null);
-    const [operationName, setOperationName] = useState('');
-    const [isPolling, setIsPolling] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [mediaBlobUrl, setMediaBlobUrl] = useState<string | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -241,8 +239,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             const text = await response.text();
             throw new Error(text || '워커 실행 실패');
         }
-        const data = await response.json();
-        return data?.operationName as string | undefined;
+        return response.json();
     };
 
     const handleTranscribe = async () => {
@@ -273,19 +270,20 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                 setLongformUploadId(uploadId);
                 if (workerUrl) {
                     try {
-                        const opName = await startWorker(uploadId);
-                        if (opName) {
-                            setOperationName(opName);
-                            await handleCompleteLongform(opName);
+                        const workerResult = await startWorker(uploadId);
+                        if (workerResult?.result) {
+                            await handleCompleteLongform({ clovaResult: workerResult.result });
+                        } else if (workerResult?.operationName) {
+                            await handleCompleteLongform({ operationName: workerResult.operationName });
                         } else {
-                            toast.error('operationName을 받지 못했습니다.');
+                            toast.error('워커 결과를 받지 못했습니다.');
                         }
                     } catch (error: unknown) {
                         console.error(error);
                         toast.error(error instanceof Error ? error.message : '워커 실행 실패');
                     }
                 } else {
-                    toast.info('worker URL이 없어 수동으로 operationName을 입력해야 합니다.');
+                    toast.info('worker URL이 없어 자동 전사를 진행할 수 없습니다.');
                 }
                 return;
             }
@@ -332,29 +330,25 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
         }>;
     };
 
-    const handleCompleteLongform = async (opNameOverride?: string) => {
-        const opName = (opNameOverride || operationName).trim();
-        if (!opName) {
-            toast.error('operationName을 입력해주세요.');
-            return;
-        }
+    const handleCompleteLongform = async (payload: { operationName?: string; clovaResult?: any }) => {
         try {
-            setIsPolling(true);
-            toast.loading('전사 상태를 확인 중입니다...');
-            let done = false;
-            while (!done) {
-                const status = await pollLongformStatus(opName);
-                if (status.done) {
-                    done = true;
-                    break;
+            if (payload.operationName) {
+                toast.loading('전사 상태를 확인 중입니다...');
+                let done = false;
+                while (!done) {
+                    const status = await pollLongformStatus(payload.operationName);
+                    if (status.done) {
+                        done = true;
+                        break;
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 5000));
                 }
-                await new Promise((resolve) => setTimeout(resolve, 5000));
             }
 
             const completeResponse = await fetch('/api/stt/complete', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ operationName: opName }),
+                body: JSON.stringify(payload),
             });
             const data = await completeResponse.json();
             if (!completeResponse.ok) {
@@ -371,8 +365,6 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             console.error(error);
             toast.dismiss();
             toast.error(error instanceof Error ? error.message : '완료 처리 중 오류가 발생했습니다.');
-        } finally {
-            setIsPolling(false);
         }
     };
 
@@ -485,20 +477,11 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                     <div className="text-xs text-muted-foreground">
                         업로드 ID: <span className="font-mono">{longformUploadId}</span>
                     </div>
-                    <input
-                        type="text"
-                        value={operationName}
-                        onChange={(e) => setOperationName(e.target.value)}
-                        placeholder="operationName 입력 (worker 결과)"
-                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
-                    />
-                    <Button
-                        onClick={() => handleCompleteLongform()}
-                        disabled={isUploading || isPolling}
-                        className="w-full"
-                    >
-                        {isPolling ? '전사 상태 확인 중...' : '전사 완료 확인'}
-                    </Button>
+                    {!workerUrl && (
+                        <div className="text-xs text-muted-foreground">
+                            워커 URL이 없어 수동 완료 처리를 사용할 수 없습니다.
+                        </div>
+                    )}
                 </div>
             )}
         </div>

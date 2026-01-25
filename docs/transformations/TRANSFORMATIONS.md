@@ -37,6 +37,18 @@
   - `/api/stt/start` 및 `/api/stt/complete` 결과 매핑 적용.
   - 장시간 파일 Async 처리 설계.
 
+## T-20260125-003 — Clova 결과를 세션/트랜스크립트로 변환
+- **Intent (구조적 개선 목표)**: Clova diarization 결과를 앱의 세션/트랜스크립트 구조로 변환하여 end-to-end 테스트 가능 상태로 만든다.
+- **Change (변경 사항)**:
+  - `/api/stt/complete`가 `clovaResult`를 받아 segments → transcripts로 매핑.
+  - longform 클라이언트 흐름이 워커 결과를 `/api/stt/complete`로 전달하도록 변경.
+- **Constraints (제약 사항)**:
+  - Clova Sync 결과 크기 제한 및 응답 지연 가능성.
+- **Acceptance (테스트/데모 기준)**:
+  - 워커가 반환한 Clova 결과로 세션이 생성되고, transcript가 화면에 표시된다.
+- **Follow-ups (후속 작업)**:
+  - Clova Async 처리 전환 시 job ID 기반 폴링 설계.
+
 ## T-20260125-001 — STT Diarization 설정 분리 (env 기반 튜닝)
 - **Intent (구조적 개선 목표)**: diarization 튜닝을 코드 변경 없이 반복할 수 있도록 설정을 외부화해 실험 효율을 높임.
 - **Change (변경 사항)**:
