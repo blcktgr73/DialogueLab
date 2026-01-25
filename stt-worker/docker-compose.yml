@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  stt-worker:
+    build:
+      context: /home/blcktgr/stt
+    image: dialoguelab-stt-worker
+    container_name: dialoguelab-stt-worker
+    working_dir: /app
+    volumes:
+      - /home/blcktgr/prj/DialogueLab:/app
+    command: ["node", "scripts/stt-worker-server.mjs"]
+    env_file:
+      - /home/blcktgr/stt/.env
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
+    networks:
+      - npm_default
+      - stt_default
+
+networks:
+  npm_default:
+    external: true
+  stt_default:
+    external: true
