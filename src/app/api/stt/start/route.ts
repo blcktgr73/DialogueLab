@@ -46,9 +46,14 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const config = getSttRequestConfig('long');
+        if (process.env.STT_DEBUG === '1') {
+            console.log('[STT Start] Config', config);
+        }
+
         const request = {
             audio: { uri: gcsUri },
-            config: getSttRequestConfig('long'),
+            config,
         };
 
         const [operation] = await speechClient.longRunningRecognize(request);

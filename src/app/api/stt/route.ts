@@ -42,11 +42,16 @@ export async function POST(req: NextRequest) {
         const audioBytes = Buffer.from(arrayBuffer).toString('base64');
 
         // 4. STT 요청 구성
+        const config = getSttRequestConfig('short');
+        if (process.env.STT_DEBUG === '1') {
+            console.log('[STT] Config', config);
+        }
+
         const request = {
             audio: {
                 content: audioBytes,
             },
-            config: getSttRequestConfig('short'),
+            config,
         };
 
         console.log('[STT API] Requesting recognition...');
