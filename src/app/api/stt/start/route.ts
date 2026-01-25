@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             operationName: operation?.name,
+            ...(process.env.STT_DEBUG === '1' ? { debug: { config } } : {}),
         });
     } catch (error: unknown) {
         console.error('[STT Start] Error:', error);

@@ -143,6 +143,42 @@ function mergeWithFfmpeg({ chunks, outputPath, tempDir }) {
     }
 }
 
+function inspectAudio(filePath) {
+    const result = spawnSync(
+        'ffprobe',
+        [
+            '-hide_banner',
+            '-loglevel',
+            'error',
+            '-show_entries',
+            'format=format_name,duration:stream=index,codec_name,codec_type,channels,sample_rate,bit_rate',
+            '-print_format',
+            'json',
+            filePath,
+        ],
+        { stdio: 'pipe' }
+    );
+
+    if (result.error) {
+        console.error(`[stt-worker] ffprobe not available: ${result.error.message}`);
+        return;
+    }
+
+    if (result.status !== 0) {
+        const stderr = result.stderr?.toString() || '';
+        console.error(`[stt-worker] ffprobe failed: ${stderr}`);
+        return;
+    }
+
+    const output = result.stdout?.toString() || '';
+    if (!output) {
+        console.error('[stt-worker] ffprobe returned empty output');
+        return;
+    }
+
+    console.error('[stt-worker] ffprobe', output.trim());
+}
+
 async function uploadToGcs({ bucketName, filePath, destination, credentials, projectId }) {
     const keyHeader = credentials.private_key?.split('\n')[0] || '';
     const keyFooter = credentials.private_key?.split('\n').slice(-1)[0] || '';
@@ -178,6 +214,9 @@ async function startSttIfRequested({ startUrl, gcsUri }) {
     }
 
     const data = await response.json();
+    if (data?.debug?.config) {
+        console.error('[stt-worker] stt config', JSON.stringify(data.debug.config));
+    }
     return data?.operationName || null;
 }
 
@@ -215,6 +254,7 @@ async function main() {
     console.error(`[stt-worker] merging ${chunks.length} chunks`);
     const outputPath = path.join(tempDir, 'merged.webm');
     mergeWithFfmpeg({ chunks, outputPath, tempDir });
+    inspectAudio(outputPath);
 
     const keyHeader = privateKey.split('\n')[0] || '';
     const keyFooter = privateKey.split('\n').slice(-1)[0] || '';

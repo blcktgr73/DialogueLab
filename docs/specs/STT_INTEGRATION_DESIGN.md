@@ -71,6 +71,19 @@ STT_DIARIZATION_MIN_SPEAKER=2
 STT_DIARIZATION_MAX_SPEAKER=10
 STT_SAMPLE_RATE_HERTZ=48000
 STT_LANGUAGE_CODE=ko-KR
+
+### Debugging Tips
+
+- Enable debug logs:
+  - `STT_DEBUG=1`
+- Longform pipeline logs (worker):
+  - `docker logs -f --tail 200 dialoguelab-stt-worker`
+  - The worker prints ffprobe output for the merged file and echoes STT config when `STT_DEBUG=1`.
+- Shortform pipeline logs (server):
+  - Look for `[STT] Config` and `[STT Start] Config` in the dev server logs.
+- Diarization quick check:
+  - Verify `speakerTags` distribution in `/api/stt/status` debug logs.
+  - If all words are `speakerTag=1`, force `minSpeakerCount=maxSpeakerCount=2` and retest.
 ```
 
 ### 4.3. Diarization Config
