@@ -34,7 +34,7 @@ export async function createSession(formData?: FormData) {
     }
 
     if (data) {
-        redirect(`/sessions/${data.id}`)
+        redirect(`/sessions/${data.id}/live`)
     }
 }
 
@@ -198,6 +198,30 @@ export async function updateSessionTitle(sessionId: string, newTitle: string) {
 }
 
 export async function createSimulationSession(persona: { name: string; topic: string; resistance: number }) {
+    const normalizePersona = (input: { name: string; topic: string; resistance: number }) => {
+        const name = input?.name?.trim() ?? ''
+        const topic = input?.topic?.trim() ?? ''
+        const resistanceRaw = Number(input?.resistance)
+        const resistance = Number.isFinite(resistanceRaw)
+            ? Math.min(10, Math.max(1, Math.round(resistanceRaw)))
+            : 5
+
+        if (!name) {
+            throw new Error('파트너 이름이 필요합니다.')
+        }
+        if (name.length > 40) {
+            throw new Error('파트너 이름은 40자 이내여야 합니다.')
+        }
+        if (!topic) {
+            throw new Error('상담 주제가 필요합니다.')
+        }
+        if (topic.length > 80) {
+            throw new Error('상담 주제는 80자 이내여야 합니다.')
+        }
+
+        return { name, topic, resistance }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -205,16 +229,18 @@ export async function createSimulationSession(persona: { name: string; topic: st
         throw new Error('User is not authenticated')
     }
 
+    const normalizedPersona = normalizePersona(persona)
+
     const { data, error } = await supabase
         .from('sessions')
         .insert([
             {
-                title: `${persona.topic} (연습: ${persona.name})`,
+                title: `${normalizedPersona.topic} (연습: ${normalizedPersona.name})`,
                 mode: 'practice',
                 partner_type: 'ai',
                 user_id: user.id,
                 metadata: {
-                    persona: persona,
+                    persona: normalizedPersona,
                     started_at: new Date().toISOString()
                 }
             }
@@ -227,7 +253,9 @@ export async function createSimulationSession(persona: { name: string; topic: st
         throw new Error('시뮬레이션 세션 생성 실패')
     }
 
-    if (data) {
-        redirect(`/sessions/${data.id}`)
+    if (!data) {
+        throw new Error('시뮬레이션 세션 생성 실패')
     }
+
+    return data.id
 }

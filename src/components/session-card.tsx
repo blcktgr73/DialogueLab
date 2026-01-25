@@ -27,6 +27,11 @@ export function SessionCard({ session }: SessionCardProps) {
     const [isEditing, setIsEditing] = useState(false)
     const [title, setTitle] = useState(session.title || '제목 없는 세션')
     const [isLoading, setIsLoading] = useState(false)
+    const modeLabel = session.mode === 'practice'
+        ? '연습'
+        : session.mode === 'eval'
+            ? '평가'
+            : '자유'
 
     // Sync state if prop changes (e.g. from router.refresh)
     useEffect(() => {
@@ -99,7 +104,7 @@ export function SessionCard({ session }: SessionCardProps) {
 
                     <div className="flex items-center gap-2">
                         <div className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-                            {session.mode === 'practice' ? '연습' : '자유'}
+                            {modeLabel}
                         </div>
 
                         {/* Partner Type Badge */}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -11,6 +12,7 @@ import { createSimulationSession } from '@/app/actions/session'
 import { toast } from 'sonner'
 
 export function SimulationSetupDialog() {
+    const router = useRouter()
     const [open, setOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [persona, setPersona] = useState({
@@ -22,13 +24,17 @@ export function SimulationSetupDialog() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
+        const toastId = toast.loading("시뮬레이션을 준비하고 있습니다.")
 
         try {
-            await createSimulationSession(persona)
+            const sessionId = await createSimulationSession(persona)
+            toast.dismiss(toastId)
             toast.success("시뮬레이션 환경을 구성했습니다.")
             setOpen(false)
+            router.push(`/sessions/${sessionId}/live`)
         } catch (error) {
             console.error(error)
+            toast.dismiss(toastId)
             toast.error("시뮬레이션 생성에 실패했습니다.")
         } finally {
             setIsLoading(false)
@@ -38,9 +44,9 @@ export function SimulationSetupDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" disabled className="gap-2 w-full border-violet-200 hover:bg-violet-50 hover:text-violet-700 text-violet-600">
+                <Button variant="outline" className="gap-2 w-full border-violet-200 hover:bg-violet-50 hover:text-violet-700 text-violet-600">
                     <Bot className="w-4 h-4" />
-                    AI 파트너와 연습하기 (개발중)
+                    AI 파트너와 연습하기
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
