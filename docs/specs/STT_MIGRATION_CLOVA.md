@@ -65,7 +65,34 @@ The `stt-worker` currently uses `ffmpeg` for merging. We will modify the argumen
     *   *Note*: If `stt-worker` runs long (processing + upload + analysis), the http request from Next.js to Worker might time out. We should ensure the worker returns a "Job Accepted" status or the Next.js API is designed to handle long waits (or use polling).
     *   *Simplification*: For now, let's keep the worker flow synchronous if possible (Request -> Analysis -> Return Result). Naver Clova Sync is fast.
 
-## 6. Risk Assessment
+## 6. Local Validation (Test Script)
+
+Use the provided script to validate Clova diarization before wiring it into the pipeline.
+
+**Script**: `scripts/test-clova.mjs`
+
+**Prereqs**:
+- `ffmpeg` installed (used to convert WebM -> M4A/AAC)
+- `.env.local` contains:
+  - `NAVER_CLOVA_INVOKE_URL`
+  - `NAVER_CLOVA_SECRET_KEY`
+
+**Run**:
+```bash
+node scripts/test-clova.mjs <path-to-audio.webm>
+```
+
+**What it does**:
+- Converts `.webm` to `.m4a` (AAC) if needed.
+- Sends `multipart/form-data` to `${NAVER_CLOVA_INVOKE_URL}/recognizer/upload`.
+- Uses diarization params:
+  - `diarization.enable: true`
+  - `speakerCountMin: 2`, `speakerCountMax: 4`
+- Writes preview output to `scripts/clova_output.txt`.
+
+**Expected Output**:
+- `result.segments[]` populated with speaker labels and text.
+
+## 7. Risk Assessment
 *   **File Size Limit**: Naver Clova Sync API has a body size limit (typically 60MB). `recordings01.webm` was ~2.5MB. Even converted to m4a, it should be well under 60MB. If sessions exceed ~30-60 mins, we may hit this limit and need to implement Object Storage based Async recognition.
 *   **Latency**: Uploading large files directly might be slower than cloud-to-cloud, but eliminates GCS complexity.
-
