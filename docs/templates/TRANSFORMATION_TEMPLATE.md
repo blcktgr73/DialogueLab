@@ -3,7 +3,7 @@
 ```md
 ## T-YYYYMMDD-### — <Brief Title>
 - **Theme**: <Related Theme name>
-- **Intent** (Structural Improvement Goal): Problem-Context-Solution structure
+- **Intent** (Enhancing Concept Vitality/Wholeness): Problem-Context-Solution structure
 - **Transformation Type**: [Internal | User-facing]
 - **Change**:
 - **Constraints**:

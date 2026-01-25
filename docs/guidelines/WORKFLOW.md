@@ -2,7 +2,7 @@
 
 ## Core Documents
 - **user-stories/index.md**: Theme/Epic/Story hierarchy dashboard (Single Source of Truth)
-- **user-stories/<theme>.md**: Detailed definition per Theme (State, Actions, OP) + Epic/Story list
+- **user-stories/<theme>.md**: Detailed definition per Theme (State, Actions, OP, Invariants) + Epic/Story list
 
 ## Development Process
 

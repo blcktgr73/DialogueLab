@@ -19,6 +19,9 @@ When adding a new Theme, create `docs/specs/user-stories/<theme-name>.md` file:
 > "When user performs [action1], [state change] occurs,
 > and subsequently performing [action2] leads to [result]."
 
+**Invariants**:
+> <Conditions that must always be true (e.g., "active session implies valid user")>
+
 **Related Themes**: <Dependent or related Themes>
 
 ---

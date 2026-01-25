@@ -13,33 +13,59 @@ Enable Claude Code to support **Transformation-Centered AI Pair Programming** ba
 
 ---
 
-## Core Philosophy: Concept-Driven Design
+## 3 Core Pillars of Living PRD
 
-This project follows Daniel Jackson's **Concept Design** methodology.
-Complexity is proportional to the number of concepts. Before adding new features, first review if existing concepts can be reused.
+### 1. Generative Sequence - "How it Changes"
+Based on Christopher Alexander's theory applied to software, this process breathes life into the system not by building everything at once, but through **step-by-step Transformations**.
 
-### Theme = Concept (Unified Definition)
+*   **Core Unit**: Transformation (one small structural improvement at a time).
+*   **Goal**: Maintain a 'living structure' by increasing code cohesion and Wholeness at each step.
+*   **Execution**: Record the intent and result of changes in `TRANSFORMATIONS.md` and advance incrementally.
 
-**Theme** is identical to Daniel Jackson's **Concept**. All Themes must include the following 4 elements:
+### 2. User Story Map - "What is Experienced"
+A map that visualizes the user journey and value, breaking it down into manageable units to prioritize development.
+
+*   **Hierarchy**: Track business value through the flow of `Theme → Epic → User Story`.
+*   **Dynamic Management**: Use `index.md` as the **Single Source of Truth** to synchronize implemented stories and remaining work in real-time.
+*   **Connectivity**: Individual stories must be linked to a specific Transformation ID to ensure traceability.
+
+### 3. Concept-Driven Development - "How it Works (Operational Principle)"
+Borrowing from Daniel Jackson's theory, design the system based on independent **Concepts** rather than Features.
+
+*   **Theme = Concept**: Every Theme has its own State, Actions, Operational Principle, and Invariants.
+*   **Complexity Control**: Before adding new features, first check if existing concepts can be reused or extended to prevent system pollution.
+*   **Consistency**: Clear concepts reduce the mismatch between User Interface (UI) and internal logic (Code).
+
+**Theme Elements (Concept Structure):**
 
 | Element | Description | Example (Authentication) |
-|------|------|----------------------|
-| **Name** | A name intuitively understandable by the user | Authentication |
+|---------|-------------|--------------------------|
+| **Name** | Name intuitively understandable by the user | Authentication |
 | **State** | Data structure the concept needs to remember | sessions, credentials |
 | **Actions** | Commands the user can perform | login, logout, resetPassword |
-| **Operational Principle** | Achieving goals through interaction of actions | See below |
+| **Operational Principle** | Achieving goals through interaction of actions | *See example below* |
+| **Invariants** | Conditions that must always be true | e.g., "active session implies valid user" |
 
 **Operational Principle Example:**
 > "When a user logs in, a session is created; when they log out, the session is deleted.
 > Resetting the password issues a temporary token, allowing a new password to be set."
 
-### Story 계층 구조
-
+**Hierarchy:**
 ```
-Theme (= Concept)     ← Definition of State, Actions, Operational Principle
+Theme (= Concept)     ← Definition of State, Actions, Operational Principle, Invariants
     └── Epic          ← Large feature group
         └── Story     ← Implementation unit (Includes Acceptance Criteria)
 ```
+
+### Interaction Model of the 3 Pillars
+
+These three pillars are not independent but operate in a cycle:
+
+1.  **Concept (Theme)** establishes the mental model and rules of the system.
+2.  **User Story Map** designs the value and sequence users will enjoy based on this.
+3.  **Generative Sequence** actually **transforms the structure**, making the code come alive.
+
+> **"Every Transformation must enhance the vitality of a specific Theme (Concept), and the results must be proven by the progress of the User Story Map."**
 
 ---
 
