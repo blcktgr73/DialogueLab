@@ -75,6 +75,23 @@ export async function createSessionWithTranscript(fullText: string, rawData: any
     const allWords = rawData.words || []; // API Route에서 words를 따로 빼서 줌
 
     if (allWords && allWords.length > 0) {
+        const detokenize = (tokens: string[]) => {
+            let text = '';
+            for (const token of tokens) {
+                if (!token) continue;
+                if (token === '▁') {
+                    text += ' ';
+                    continue;
+                }
+                if (token.startsWith('▁')) {
+                    text += ` ${token.slice(1)}`;
+                } else {
+                    text += token;
+                }
+            }
+            return text.replace(/\s+/g, ' ').trim();
+        };
+
         // Speaker Tag별로 그룹핑 로직 필요 (간단 구현)
         // sequential 하게 순회하며 speaker가 바뀔 때마다 새로운 row 생성
         let currentSpeaker = allWords[0].speakerTag?.toString() || '1';
@@ -90,7 +107,7 @@ export async function createSessionWithTranscript(fullText: string, rawData: any
                 transcripts.push({
                     session_id: session.id,
                     speaker: `참석자 ${currentSpeaker}`,
-                    content: currentContent.join(' '),
+                    content: detokenize(currentContent),
                     timestamp: 0,
                     transcript_index: transcriptIndex++
                 });
@@ -106,7 +123,7 @@ export async function createSessionWithTranscript(fullText: string, rawData: any
             transcripts.push({
                 session_id: session.id,
                 speaker: `참석자 ${currentSpeaker}`,
-                content: currentContent.join(' '),
+                content: detokenize(currentContent),
                 timestamp: 0,
                 transcript_index: transcriptIndex++
             });

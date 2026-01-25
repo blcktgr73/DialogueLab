@@ -94,6 +94,23 @@ function buildTranscriptRows(sessionId: string, fullText: string, words: { word:
         return rows;
     }
 
+    const detokenize = (tokens: string[]) => {
+        let text = '';
+        for (const token of tokens) {
+            if (!token) continue;
+            if (token === '▁') {
+                text += ' ';
+                continue;
+            }
+            if (token.startsWith('▁')) {
+                text += ` ${token.slice(1)}`;
+            } else {
+                text += token;
+            }
+        }
+        return text.replace(/\s+/g, ' ').trim();
+    };
+
     let currentSpeaker = words[0].speakerTag;
     let currentContent: string[] = [];
     let transcriptIndex = 0;
@@ -103,7 +120,7 @@ function buildTranscriptRows(sessionId: string, fullText: string, words: { word:
             rows.push({
                 session_id: sessionId,
                 speaker: `참석자 ${currentSpeaker}`,
-                content: currentContent.join(' '),
+                content: detokenize(currentContent),
                 timestamp: 0,
                 transcript_index: transcriptIndex++,
             });
@@ -118,7 +135,7 @@ function buildTranscriptRows(sessionId: string, fullText: string, words: { word:
         rows.push({
             session_id: sessionId,
             speaker: `참석자 ${currentSpeaker}`,
-            content: currentContent.join(' '),
+            content: detokenize(currentContent),
             timestamp: 0,
             transcript_index: transcriptIndex,
         });
