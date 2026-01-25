@@ -210,6 +210,12 @@ export async function POST(req: NextRequest) {
             fullText = segments.map((segment) => segment.text).join('\n');
             transcriptRows = buildClovaRows('placeholder', segments);
         } else {
+            if (!name) {
+                return NextResponse.json(
+                    { error: 'operationName이 필요합니다.' },
+                    { status: 400 }
+                );
+            }
             const configStatus = checkSpeechConfig();
             if (!configStatus.ok) {
                 console.error('[STT Complete] Configuration Error:', configStatus.error);
