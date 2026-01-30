@@ -198,12 +198,41 @@ async function uploadToClova({ invokeUrl, secretKey, filePath, params }) {
     return response.json();
 }
 
+
+async function logSystem(supabase, sessionId, level, message, metadata = {}) {
+    // Local logs to stderr (stdout is for result JSON)
+    const prefix = `[STT-WORKER]`;
+    if (level === 'error') {
+        console.error(prefix, message, metadata);
+    } else {
+        console.error(prefix, message);
+    }
+
+    if (!supabase) return;
+
+    try {
+        await supabase.from('system_logs').insert({
+            session_id: sessionId,
+            source: 'stt-worker',
+            level,
+            message,
+            metadata
+        });
+    } catch (error) {
+        console.error('[stt-worker] Failed to send log:', error.message);
+    }
+}
+
 async function main() {
     const args = parseArgs(process.argv.slice(2));
     const prefix = args.prefix;
     if (!prefix) {
         throw new Error('Usage: node scripts/stt-worker.mjs --prefix <storage-prefix>');
     }
+
+    // Extract sessionId from prefix (e.g. "recordings/req_123" -> "req_123")
+    // Fallback to prefix if standard format isn't used
+    const sessionId = prefix.includes('/') ? prefix.split('/').pop() : prefix;
 
     const supabaseUrl = requireEnv('SUPABASE_URL');
     const supabaseKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
@@ -218,61 +247,85 @@ async function main() {
         auth: { persistSession: false },
     });
 
-    console.error(`[stt-worker] downloading chunks from ${supabaseBucket}/${prefix}`);
-    const chunks = await downloadChunks({
-        supabase,
-        bucket: supabaseBucket,
-        prefix,
-        tempDir,
-    });
+    await logSystem(supabase, sessionId, 'info', 'Worker started', { prefix, tempDir });
 
-    console.error(`[stt-worker] merging ${chunks.length} chunks`);
-    const outputPath = path.join(tempDir, 'merged.m4a');
-    mergeWithFfmpeg({ chunks, outputPath, tempDir });
-    inspectAudio(outputPath);
+    try {
+        console.error(`[stt-worker] downloading chunks from ${supabaseBucket}/${prefix}`);
+        await logSystem(supabase, sessionId, 'info', 'Downloading chunks', { bucket: supabaseBucket });
 
-    const minSpeakerCount = Number.parseInt(process.env.STT_DIARIZATION_MIN_SPEAKER || '2', 10);
-    const maxSpeakerCount = Number.parseInt(process.env.STT_DIARIZATION_MAX_SPEAKER || '4', 10);
-    const languageCode = process.env.STT_LANGUAGE_CODE || 'ko-KR';
-    const domainCode = process.env.NAVER_CLOVA_DOMAIN_CODE;
+        const chunks = await downloadChunks({
+            supabase,
+            bucket: supabaseBucket,
+            prefix,
+            tempDir,
+        });
 
-    const params = {
-        language: languageCode,
-        completion: 'sync',
-        callback: null,
-        userdata: domainCode ? { _ncp_DomainCode: domainCode } : undefined,
-        forbidden: null,
-        boostings: null,
-        wordAlignment: true,
-        fullText: true,
-        diarization: {
-            enable: true,
-            speakerCountMin: minSpeakerCount,
-            speakerCountMax: maxSpeakerCount,
-        },
-    };
+        await logSystem(supabase, sessionId, 'info', 'Chunks downloaded', { count: chunks.length });
 
-    console.error('[stt-worker] uploading merged file to Clova');
-    console.error('[stt-worker] clova params', JSON.stringify(params));
-    const clovaResult = await uploadToClova({
-        invokeUrl: clovaInvokeUrl,
-        secretKey: clovaSecretKey,
-        filePath: outputPath,
-        params,
-    });
+        console.error(`[stt-worker] merging ${chunks.length} chunks`);
+        const outputPath = path.join(tempDir, 'merged.m4a');
 
-    process.stdout.write(
-        JSON.stringify(
-            {
-                mergedPath: outputPath,
-                chunkCount: chunks.length,
-                prefix,
-                result: clovaResult,
+        try {
+            mergeWithFfmpeg({ chunks, outputPath, tempDir });
+            await logSystem(supabase, sessionId, 'info', 'Merge complete');
+        } catch (mergeError) {
+            await logSystem(supabase, sessionId, 'error', 'FFmpeg merge failed', { error: mergeError.message });
+            throw mergeError;
+        }
+
+        inspectAudio(outputPath);
+
+        const minSpeakerCount = Number.parseInt(process.env.STT_DIARIZATION_MIN_SPEAKER || '2', 10);
+        const maxSpeakerCount = Number.parseInt(process.env.STT_DIARIZATION_MAX_SPEAKER || '4', 10);
+        const languageCode = process.env.STT_LANGUAGE_CODE || 'ko-KR';
+        const domainCode = process.env.NAVER_CLOVA_DOMAIN_CODE;
+
+        const params = {
+            language: languageCode,
+            completion: 'sync',
+            callback: null,
+            userdata: domainCode ? { _ncp_DomainCode: domainCode } : undefined,
+            forbidden: null,
+            boostings: null,
+            wordAlignment: true,
+            fullText: true,
+            diarization: {
+                enable: true,
+                speakerCountMin: minSpeakerCount,
+                speakerCountMax: maxSpeakerCount,
             },
-            null,
-            2
-        )
-    );
+        };
+
+        console.error('[stt-worker] uploading merged file to Clova');
+        console.error('[stt-worker] clova params', JSON.stringify(params));
+
+        await logSystem(supabase, sessionId, 'info', 'Uploading to Clova', { params });
+
+        const clovaResult = await uploadToClova({
+            invokeUrl: clovaInvokeUrl,
+            secretKey: clovaSecretKey,
+            filePath: outputPath,
+            params,
+        });
+
+        await logSystem(supabase, sessionId, 'info', 'Clova processing complete', { resultSummary: clovaResult.text ? 'Text found' : 'No text' });
+
+        process.stdout.write(
+            JSON.stringify(
+                {
+                    mergedPath: outputPath,
+                    chunkCount: chunks.length,
+                    prefix,
+                    result: clovaResult,
+                },
+                null,
+                2
+            )
+        );
+    } catch (error) {
+        await logSystem(supabase, sessionId, 'error', 'Worker failed', { error: getErrorMessage(error) });
+        throw error;
+    }
 }
 
 main().catch((error) => {

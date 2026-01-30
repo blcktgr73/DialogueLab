@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { uploadBlobInChunks } from '@/lib/stt-upload';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
+import { Copy } from 'lucide-react';
 
 interface AudioRecorderProps {
     onTranscriptionComplete?: (text: string, rawData?: any) => void;
@@ -29,7 +31,23 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
     const chunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const router = useRouter();
+
     const workerUrl = process.env.NEXT_PUBLIC_STT_WORKER_URL || '';
+
+    // Debugging / Logging
+    const [sessionId, setSessionId] = useState<string>("");
+
+    // Generate a fresh session ID on mount for initial state, 
+    // but typically we want one per recording attempt? 
+    // Let's generate one when recording starts or when file is ready.
+    // Actually, one per "Attempt" is best.
+
+    // Helper to copy debug info
+    const copyDebugInfo = () => {
+        if (!sessionId) return;
+        navigator.clipboard.writeText(sessionId);
+        toast.info('디버그 ID가 복사되었습니다.', { description: sessionId });
+    };
 
     // Timer Logic: Dependent on isRecording state to be robust
     useEffect(() => {
@@ -85,7 +103,14 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
         getDevices();
     }, []);
 
+
+
     const startRecording = async () => {
+        // Generate new session ID for this recording session
+        const newSessionId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        setSessionId(newSessionId);
+        logger.info(newSessionId, 'Recording started', { userAgent: navigator.userAgent });
+
         try {
             const constraints: MediaStreamConstraints = {
                 audio: {
@@ -96,6 +121,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                 }
             };
 
+            logger.info(newSessionId, 'Requesting user media', { constraints });
             console.log('[Recorder] Requesting user media with constraints:', constraints);
             const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
             setStream(mediaStream);
@@ -103,20 +129,16 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             // Debugging: Log active device details
             const track = mediaStream.getAudioTracks()[0];
             if (track) {
+                logger.info(newSessionId, 'Audio track acquired', { label: track.label, settings: track.getSettings() });
                 console.log(`[Recorder] Active Device: ${track.label}`);
-                console.log(`[Recorder] Track State: readyState=${track.readyState}, muted=${track.muted}, enabled=${track.enabled}`);
             }
-
-            // Debugging: List all available devices (already done in useEffect, but good for context)
-            // const devices = await navigator.mediaDevices.enumerateDevices();
-            // const audioInputs = devices.filter(d => d.kind === 'audioinput');
-            // console.log('[Recorder] Available Audio Inputs:', audioInputs.map(d => `${d.label} (${d.deviceId})`));
 
             // Let browser choose the best mimeType automatically
             const mediaRecorder = new MediaRecorder(mediaStream);
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
 
+            logger.info(newSessionId, 'MediaRecorder initialized', { mimeType: mediaRecorder.mimeType });
             console.log('[Recorder] Initialized with auto-selected mimeType:', mediaRecorder.mimeType);
 
             mediaRecorder.ondataavailable = (e) => {
@@ -128,6 +150,10 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             mediaRecorder.onstop = () => {
                 // Use the actual mimeType from the recorder for the Blob
                 const recordedType = mediaRecorder.mimeType || 'audio/webm';
+                logger.info(newSessionId, 'Recording stopped', {
+                    chunkCount: chunksRef.current.length,
+                    mimeType: recordedType
+                });
                 console.log('[Recorder] Creating Blob with type:', recordedType);
 
                 const blob = new Blob(chunksRef.current, { type: recordedType });
@@ -143,8 +169,9 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             setIsRecording(true);
             setMediaBlobUrl(null);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('[Recorder] Error starting recording:', error);
+            logger.error(newSessionId, 'Failed to start recording', { error: error.message });
             toast.error('마이크 권한을 확인해주시거나, 다른 마이크를 선택해주세요.');
         }
     };
@@ -193,33 +220,55 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             const isLongform = recordingTime > 60;
             if (isLongform || file.size > inlineLimitBytes) {
                 toast.loading('대용량 업로드를 시작합니다...');
+                logger.info(sessionId, 'Starting longform upload', { size: file.size, isLongform });
+
+                // Use sessionId as part of the directory structure: recordings/sessionId
+                const uploadPrefix = `recordings/${sessionId}`;
+
                 const { uploadId } = await uploadBlobInChunks({
                     blob: file,
+                    prefix: uploadPrefix, // Pass explicitly so we match our logging ID
                     onProgress: ({ completedChunks, totalChunks }) => {
                         const ratio = totalChunks === 0 ? 0 : completedChunks / totalChunks;
                         setUploadProgress(Math.round(ratio * 100));
+                        // Log sporadic progress? Maybe 0, 50, 100
+                        if (ratio === 0 || ratio === 0.5 || ratio === 1) {
+                            logger.info(sessionId, 'Upload progress', { completedChunks, totalChunks });
+                        }
                     },
                 });
+
                 toast.dismiss();
                 toast.success('업로드 완료. 워커 실행을 시작합니다.');
                 console.log('[Recorder] Longform upload completed:', uploadId);
+                logger.info(sessionId, 'Upload completed', { uploadId });
+
                 setLongformUploadId(uploadId);
+
                 if (workerUrl) {
                     try {
+                        logger.info(sessionId, 'Triggering worker', { workerUrl });
+                        // NOTE: We pass prefix=uploadId. The worker uses this to find chunks.
                         const workerResult = await startWorker(uploadId);
+                        logger.info(sessionId, 'Worker accepted task', { result: workerResult });
+
                         if (workerResult?.result) {
                             await handleCompleteLongform({ clovaResult: workerResult.result });
                         } else if (workerResult?.operationName) {
                             await handleCompleteLongform({ operationName: workerResult.operationName });
                         } else {
                             toast.error('워커 결과를 받지 못했습니다.');
+                            logger.error(sessionId, 'Worker returned empty result');
                         }
-                    } catch (error: unknown) {
+                    } catch (error: any) {
                         console.error(error);
-                        toast.error(error instanceof Error ? error.message : '워커 실행 실패');
+                        const msg = error instanceof Error ? error.message : '워커 실행 실패';
+                        toast.error(msg);
+                        logger.error(sessionId, 'Worker invocation failed', { error: msg });
                     }
                 } else {
                     toast.info('worker URL이 없어 자동 전사를 진행할 수 없습니다.');
+                    logger.warn(sessionId, 'Worker URL missing');
                 }
                 return;
             }
@@ -374,22 +423,22 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                 <div className="w-full space-y-4 animate-in fade-in slide-in-from-bottom-2">
                     <audio src={mediaBlobUrl} controls className="w-full h-10" />
 
-                <div className="flex gap-2 w-full px-4 mb-2">
-                    <Button
-                        onClick={handleTranscribe}
-                        disabled={isUploading}
-                        className="flex-1"
-                        size="lg"
-                    >
-                        {isUploading ? (
-                            <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                {uploadProgress !== null ? `업로드 중... ${uploadProgress}%` : '분석 중...'}
-                            </>
-                        ) : (
-                            <>
-                                <UploadCloud className="w-4 h-4 mr-2" />
-                                전사 및 세션 생성
+                    <div className="flex gap-2 w-full px-4 mb-2">
+                        <Button
+                            onClick={handleTranscribe}
+                            disabled={isUploading}
+                            className="flex-1"
+                            size="lg"
+                        >
+                            {isUploading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    {uploadProgress !== null ? `업로드 중... ${uploadProgress}%` : '분석 중...'}
+                                </>
+                            ) : (
+                                <>
+                                    <UploadCloud className="w-4 h-4 mr-2" />
+                                    전사 및 세션 생성
                                 </>
                             )}
                         </Button>
@@ -410,14 +459,30 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
 
             {!isRecording && longformUploadId && (
                 <div className="w-full space-y-3 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="text-xs text-muted-foreground">
-                        업로드 ID: <span className="font-mono">{longformUploadId}</span>
+                    <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+                        <span>Ref: <span className="font-mono text-primary/80">{sessionId}</span></span>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4"
+                            onClick={copyDebugInfo}
+                            title="디버그 ID 복사"
+                        >
+                            <Copy className="h-3 w-3" />
+                        </Button>
                     </div>
                     {!workerUrl && (
                         <div className="text-xs text-muted-foreground">
                             워커 URL이 없어 수동 완료 처리를 사용할 수 없습니다.
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Debug ID Indicator (Always visible if exists) */}
+            {sessionId && !longformUploadId && (
+                <div className="absolute bottom-2 right-2 text-[10px] text-muted-foreground/30 hover:text-muted-foreground/80 transition-colors cursor-pointer" onClick={copyDebugInfo}>
+                    ID: {sessionId}
                 </div>
             )}
         </div>
