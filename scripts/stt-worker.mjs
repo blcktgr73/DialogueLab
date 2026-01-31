@@ -283,7 +283,7 @@ async function main() {
         const params = {
             language: languageCode,
             completion: args.completion || 'sync',
-            callback: null,
+            callback: args.completion === 'async' ? 'http://localhost' : null,
             userdata: domainCode ? { _ncp_DomainCode: domainCode } : undefined,
             forbidden: null,
             boostings: null,
