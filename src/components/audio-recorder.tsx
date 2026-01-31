@@ -221,6 +221,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
         if (!mediaBlobUrl) return;
 
         try {
+            logger.info(sessionId, 'Transcribe button clicked'); // Log user interaction
             setIsUploading(true);
             setUploadProgress(null);
 
@@ -267,9 +268,17 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                         });
                         logger.info(sessionId, 'Worker accepted task', { result: workerResult });
 
-                        if (workerResult?.result) {
+                        if (workerResult?.result?.token) {
+                            // Async completion (Clova)
+                            await handleCompleteLongform({
+                                operationName: workerResult.result.token,
+                                provider: 'clova'
+                            });
+                        } else if (workerResult?.result) {
+                            // Sync completion
                             await handleCompleteLongform({ clovaResult: workerResult.result });
                         } else if (workerResult?.operationName) {
+                            // Google STT legacy
                             await handleCompleteLongform({ operationName: workerResult.operationName });
                         } else {
                             toast.error('워커 결과를 받지 못했습니다.');
@@ -310,15 +319,18 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
 
         } catch (error: unknown) {
             console.error(error);
-            toast.error(error instanceof Error ? error.message : '변환 중 오류가 발생했습니다.');
+            const msg = error instanceof Error ? error.message : '변환 중 오류가 발생했습니다.';
+            toast.error(msg);
+            logger.error(sessionId, 'Transcribe failed', { error: msg }); // Log error
         } finally {
             setIsUploading(false);
             setUploadProgress(null);
         }
     };
 
-    const pollLongformStatus = async (opName: string) => {
-        const response = await fetch(`/api/stt/status?name=${encodeURIComponent(opName)}`);
+    const pollLongformStatus = async (opName: string, provider?: string) => {
+        const url = `/api/stt/status?name=${encodeURIComponent(opName)}${provider ? `&provider=${provider}` : ''}`;
+        const response = await fetch(url);
         if (!response.ok) {
             const text = await response.text();
             throw new Error(text || '상태 조회 실패');
@@ -327,28 +339,35 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             done: boolean;
             text?: string | null;
             metadata?: unknown;
+            details?: any;
         }>;
     };
 
-    const handleCompleteLongform = async (payload: { operationName?: string; clovaResult?: any }) => {
+    const handleCompleteLongform = async (payload: { operationName?: string; clovaResult?: any; provider?: string }) => {
         try {
+            let finalPayload = { ...payload };
+
             if (payload.operationName) {
                 toast.loading('전사 상태를 확인 중입니다...');
                 let done = false;
                 while (!done) {
-                    const status = await pollLongformStatus(payload.operationName);
+                    const status = await pollLongformStatus(payload.operationName, payload.provider);
                     if (status.done) {
                         done = true;
+                        // For Clova, use the polled details as the result
+                        if (payload.provider === 'clova' && status.details) {
+                            finalPayload = { clovaResult: status.details };
+                        }
                         break;
                     }
-                    await new Promise((resolve) => setTimeout(resolve, 5000));
+                    await new Promise((resolve) => setTimeout(resolve, 3000));
                 }
             }
 
             const completeResponse = await fetch('/api/stt/complete', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(finalPayload),
             });
             const data = await completeResponse.json();
             if (!completeResponse.ok) {

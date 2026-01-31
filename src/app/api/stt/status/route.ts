@@ -24,11 +24,53 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const name = searchParams.get('name');
+        const provider = searchParams.get('provider');
+
         if (!name) {
             return NextResponse.json(
                 { error: 'name 쿼리 파라미터가 필요합니다.' },
                 { status: 400 }
             );
+        }
+
+        if (provider === 'clova') {
+            const secretKey = process.env.NAVER_CLOVA_SECRET_KEY;
+            const invokeUrl = process.env.NAVER_CLOVA_INVOKE_URL;
+            if (!secretKey || !invokeUrl) {
+                return NextResponse.json({ error: 'Clova 설정이 누락되었습니다.' }, { status: 500 });
+            }
+
+            // Clova polling URL: {invokeUrl}/recognizer/{token}
+            // Remove /recognizer/upload from invokeUrl if present, or just use base.
+            // Usually INVOKE_URL is like ".../v1/..." 
+            // The upload endpoint was .../recognizer/upload
+            // The status endpoint is .../recognizer/{token}
+            const baseUrl = invokeUrl.endsWith('/') ? invokeUrl.slice(0, -1) : invokeUrl;
+            const statusUrl = `${baseUrl}/recognizer/${name}`;
+
+            const response = await fetch(statusUrl, {
+                headers: { 'X-CLOVASPEECH-API-KEY': secretKey },
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Clova status check failed: ${text}`);
+            }
+
+            const data = await response.json();
+            // data format: { token, result: "PROCESSING" | "COMPLETED" | "FAILED", message, segments: [], text, ... }
+
+            if (data.result === 'COMPLETED') {
+                return NextResponse.json({
+                    done: true,
+                    text: data.text,
+                    details: data, // Pass full object so frontend can send it to 'complete' API
+                });
+            } else if (data.result === 'FAILED') {
+                throw new Error(data.message || 'Clova processing failed');
+            } else {
+                return NextResponse.json({ done: false });
+            }
         }
 
         const progress = await speechClient.checkLongRunningRecognizeProgress(name);

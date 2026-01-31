@@ -294,6 +294,7 @@ async function main() {
                 speakerCountMin: minSpeakerCount,
                 speakerCountMax: maxSpeakerCount,
             },
+            resultToObs: args.completion === 'async',
         };
 
         console.error('[stt-worker] uploading merged file to Clova');
