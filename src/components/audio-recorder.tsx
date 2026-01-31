@@ -203,12 +203,12 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
         setRecordingTime(0);
     };
 
-    const startWorker = async (uploadId: string) => {
+    const startWorker = async (uploadId: string, options?: { completion: 'sync' | 'async' }) => {
         if (!workerUrl) return null;
         const response = await fetch(workerUrl, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ prefix: uploadId }),
+            body: JSON.stringify({ prefix: uploadId, ...options }),
         });
         if (!response.ok) {
             const text = await response.text();
@@ -261,7 +261,10 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                     try {
                         logger.info(sessionId, 'Triggering worker', { workerUrl });
                         // NOTE: We pass prefix=uploadId. The worker uses this to find chunks.
-                        const workerResult = await startWorker(uploadId);
+                        // Pass completion: 'async' if longform to avoid timeouts
+                        const workerResult = await startWorker(uploadId, {
+                            completion: isLongform || file.size > inlineLimitBytes ? 'async' : 'sync'
+                        });
                         logger.info(sessionId, 'Worker accepted task', { result: workerResult });
 
                         if (workerResult?.result) {

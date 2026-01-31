@@ -15,9 +15,12 @@ function readBody(req) {
     });
 }
 
-function runWorker(prefix) {
+function runWorker(prefix, options = {}) {
     return new Promise((resolve, reject) => {
         const args = ['scripts/stt-worker.mjs', '--prefix', prefix, '--start-url', START_URL];
+        if (options.completion) {
+            args.push('--completion', options.completion);
+        }
         const child = spawn('node', args, { stdio: ['ignore', 'pipe', 'pipe'] });
         let stdout = '';
         let stderr = '';
@@ -69,12 +72,13 @@ const server = http.createServer(async (req, res) => {
         const body = await readBody(req);
         const payload = JSON.parse(body || '{}');
         const prefix = payload.prefix;
+        const completion = payload.completion;
         if (!prefix) {
             res.writeHead(400, { 'content-type': 'application/json' });
             res.end(JSON.stringify({ error: 'prefix is required' }));
             return;
         }
-        const result = await runWorker(prefix);
+        const result = await runWorker(prefix, { completion });
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify(result));
     } catch (error) {
