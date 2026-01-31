@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSpeechClient, checkSpeechConfig } from '@/lib/google-speech';
 
+import { createClient } from '@/utils/supabase/server';
+
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
+    const supabase = await createClient();
     const configStatus = checkSpeechConfig();
     if (!configStatus.ok) {
         console.error('[STT Status] Configuration Error:', configStatus.error);
@@ -41,10 +44,6 @@ export async function GET(req: NextRequest) {
             }
 
             // Clova polling URL: {invokeUrl}/recognizer/{token}
-            // Remove /recognizer/upload from invokeUrl if present, or just use base.
-            // Usually INVOKE_URL is like ".../v1/..." 
-            // The upload endpoint was .../recognizer/upload
-            // The status endpoint is .../recognizer/{token}
             const baseUrl = invokeUrl.endsWith('/') ? invokeUrl.slice(0, -1) : invokeUrl;
             const statusUrl = `${baseUrl}/recognizer/${name}`;
 
@@ -54,21 +53,50 @@ export async function GET(req: NextRequest) {
 
             if (!response.ok) {
                 const text = await response.text();
+                console.error('[STT Status] Clova failed:', text);
                 throw new Error(`Clova status check failed: ${text}`);
             }
 
             const data = await response.json();
-            // data format: { token, result: "PROCESSING" | "COMPLETED" | "FAILED", message, segments: [], text, ... }
+            console.log('[STT Status] Clova response:', { token: name, result: data.result, message: data.message });
 
             if (data.result === 'COMPLETED') {
+                // Log full completion data for debugging
+                await supabase.from('system_logs').insert({
+                    session_id: 'debug-clova-status',
+                    source: 'api/stt/status',
+                    level: 'info',
+                    message: 'Clova polling completed',
+                    metadata: {
+                        token: name,
+                        resultSummary: data
+                    }
+                });
+
                 return NextResponse.json({
                     done: true,
                     text: data.text,
-                    details: data, // Pass full object so frontend can send it to 'complete' API
+                    details: data,
                 });
             } else if (data.result === 'FAILED') {
+                await supabase.from('system_logs').insert({
+                    session_id: 'debug-clova-status-fail',
+                    source: 'api/stt/status',
+                    level: 'error',
+                    message: 'Clova polling failed',
+                    metadata: { token: name, error: data.message, fullData: data }
+                });
                 throw new Error(data.message || 'Clova processing failed');
             } else {
+                // Processing...
+                // Optionally log keep-alive for debugging
+                await supabase.from('system_logs').insert({
+                    session_id: 'debug-clova-status-processing',
+                    source: 'api/stt/status',
+                    level: 'info',
+                    message: 'Clova processing...',
+                    metadata: { token: name, result: data.result }
+                });
                 return NextResponse.json({ done: false });
             }
         }

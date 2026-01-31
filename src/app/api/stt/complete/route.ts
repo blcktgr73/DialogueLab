@@ -207,6 +207,21 @@ export async function POST(req: NextRequest) {
         let transcriptRows: TranscriptRow[] = [];
         if (clovaResult) {
             const segments = extractClovaSegments(asRecord(clovaResult));
+
+            // Log debug info to system_logs
+            await supabase.from('system_logs').insert({
+                session_id: 'debug-clova',
+                source: 'api/stt/complete',
+                level: 'info',
+                message: 'Clova result received',
+                metadata: {
+                    keys: Object.keys(clovaResult),
+                    segmentCount: segments.length,
+                    firstSegment: segments.length > 0 ? segments[0] : null,
+                    rawSegments: segments.length === 0 ? clovaResult.segments : undefined
+                }
+            });
+
             fullText = segments.map((segment) => segment.text).join('\n');
             transcriptRows = buildClovaRows('placeholder', segments);
         } else {

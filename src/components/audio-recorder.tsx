@@ -350,10 +350,18 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             if (payload.operationName) {
                 toast.loading('전사 상태를 확인 중입니다...');
                 let done = false;
+                let attempts = 0;
                 while (!done) {
+                    attempts++;
                     const status = await pollLongformStatus(payload.operationName, payload.provider);
+
+                    if (attempts % 5 === 1) { // Log every 5th attempt (approx every 15s)
+                        logger.info(sessionId, 'Polling status', { attempts, done: status.done, provider: payload.provider });
+                    }
+
                     if (status.done) {
                         done = true;
+                        logger.info(sessionId, 'Polling complete', { attempts });
                         // For Clova, use the polled details as the result
                         if (payload.provider === 'clova' && status.details) {
                             finalPayload = { clovaResult: status.details };

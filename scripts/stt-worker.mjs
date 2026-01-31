@@ -294,7 +294,7 @@ async function main() {
                 speakerCountMin: minSpeakerCount,
                 speakerCountMax: maxSpeakerCount,
             },
-            resultToObs: args.completion === 'async',
+            resultToObs: false, // Don't save to OBS, we want to poll the result json directly
         };
 
         console.error('[stt-worker] uploading merged file to Clova');
