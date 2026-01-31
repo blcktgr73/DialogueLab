@@ -17,6 +17,10 @@ Transformation 단위로 자동 진화합니다.
 - [ ] **Real-time Updates**
   - Supabase Realtime을 사용하여 새 참가자가 들어오거나 세션 내용이 변경될 때 화면 자동 갱신.
 
+- [ ] **STT Worker Stability Improvements**
+  - **Issue**: 현재 `stt-worker`는 요청마다 무제한 프로세스를 생성하여 폭주(Process/FFmpeg storm) 위험이 있음.
+  - **Action**: Job Queue(BullMQ 등) 도입 또는 Semaphore를 통한 동시 실행 제한 필요.
+
 ### 완료됨 (Completed)
 
 - [x] **Home: Session Dashboard** (UI Polish)

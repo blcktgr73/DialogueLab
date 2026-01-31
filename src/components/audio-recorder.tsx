@@ -15,9 +15,10 @@ interface AudioRecorderProps {
 
 import { AudioVisualizer } from '@/components/audio-visualizer';
 
-// Removed internal AudioVisualizer definition
+import { useWakeLock } from '@/hooks/use-wake-lock';
 
 export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
+    const { requestWakeLock, releaseWakeLock } = useWakeLock();
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [longformUploadId, setLongformUploadId] = useState<string | null>(null);
@@ -70,6 +71,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
     }, [isRecording]);
 
     // Cleanup stream on unmount
+    // Cleanup stream on change/unmount
     useEffect(() => {
         return () => {
             if (stream) {
@@ -77,6 +79,13 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
             }
         };
     }, [stream]);
+
+    // Cleanup wake lock ONLY on unmount
+    useEffect(() => {
+        return () => {
+            releaseWakeLock();
+        };
+    }, [releaseWakeLock]);
 
     useEffect(() => {
         const getDevices = async () => {
@@ -110,6 +119,8 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
         const newSessionId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
         setSessionId(newSessionId);
         logger.info(newSessionId, 'Recording started', { userAgent: navigator.userAgent });
+
+        requestWakeLock(); // Request Wake Lock (Async, don't block recording start)
 
         try {
             const constraints: MediaStreamConstraints = {
@@ -163,6 +174,7 @@ export function AudioRecorder({ onTranscriptionComplete }: AudioRecorderProps) {
                 // Stop all tracks to release microphone
                 mediaStream.getTracks().forEach(track => track.stop());
                 setStream(null);
+                releaseWakeLock(); // Release Wake Lock
             };
 
             mediaRecorder.start(100); // 100ms timeslice
