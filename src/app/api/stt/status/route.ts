@@ -73,10 +73,27 @@ export async function GET(req: NextRequest) {
                     }
                 });
 
+                let finalData = data;
+                // If Clova returned no segments (common in async + callback mode), 
+                // check if we received the result via callback and saved it to DB.
+                if (!data.segments || data.segments.length === 0) {
+                    const { data: logs } = await supabase
+                        .from('system_logs')
+                        .select('metadata')
+                        .eq('session_id', `clova-result-${name}`)
+                        .order('created_at', { ascending: false })
+                        .limit(1);
+
+                    if (logs && logs.length > 0) {
+                        console.log('[STT Status] Found result in DB callback logs');
+                        finalData = logs[0].metadata;
+                    }
+                }
+
                 return NextResponse.json({
                     done: true,
-                    text: data.text,
-                    details: data,
+                    text: finalData.text,
+                    details: finalData,
                 });
             } else if (data.result === 'FAILED') {
                 await supabase.from('system_logs').insert({

@@ -283,7 +283,7 @@ async function main() {
         const params = {
             language: languageCode,
             completion: args.completion || 'sync',
-            callback: args.completion === 'async' ? 'https://blacktiger73.duckdns.org/api/stt/callback' : null,
+            callback: args.completion === 'async' ? 'https://dialogue-lab.vercel.app/api/stt/callback' : null,
             userdata: domainCode ? { _ncp_DomainCode: domainCode } : undefined,
             forbidden: null,
             boostings: null,
