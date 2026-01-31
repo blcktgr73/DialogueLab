@@ -2,15 +2,21 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load env from root or stt-worker
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-// Fallback if running from proper context or if .env.local missing
-if (!process.env.SUPABASE_URL) {
-    dotenv.config({ path: path.resolve(process.cwd(), 'stt-worker/.env') });
-}
+// Load env from multiple possible locations
+const rootDir = process.cwd();
+dotenv.config({ path: path.resolve(rootDir, '.env.local') });
+dotenv.config({ path: path.resolve(rootDir, '.env') });
+dotenv.config({ path: path.resolve(rootDir, 'stt-worker/.env') });
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseKey = serviceRoleKey || anonKey;
+
+if (!serviceRoleKey && anonKey) {
+    console.warn('\x1b[33m%s\x1b[0m', '⚠️  WARNING: Using ANON key. System logs are usually protected by Row Level Security (RLS).');
+    console.warn('\x1b[33m%s\x1b[0m', '   If you see "No recent logs found" but expect data, please set SUPABASE_SERVICE_ROLE_KEY in .env or .env.local');
+}
 
 if (!supabaseUrl || !supabaseKey) {
     console.error('Error: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/ANON_KEY');
