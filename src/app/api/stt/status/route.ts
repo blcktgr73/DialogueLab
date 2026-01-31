@@ -61,22 +61,11 @@ export async function GET(req: NextRequest) {
             console.log('[STT Status] Clova response:', { token: name, result: data.result, message: data.message });
 
             if (data.result === 'COMPLETED') {
-                // Log full completion data for debugging
-                await supabase.from('system_logs').insert({
-                    session_id: 'debug-clova-status',
-                    source: 'api/stt/status',
-                    level: 'info',
-                    message: 'Clova polling completed',
-                    metadata: {
-                        token: name,
-                        resultSummary: data
-                    }
-                });
-
                 let finalData = data;
-                // If Clova returned no segments (common in async + callback mode), 
-                // check if we received the result via callback and saved it to DB.
-                if (!data.segments || data.segments.length === 0) {
+                let hasSegments = data.segments && data.segments.length > 0;
+
+                // If Clova returned no segments, check DB for callback data
+                if (!hasSegments) {
                     const { data: logs } = await supabase
                         .from('system_logs')
                         .select('metadata')
@@ -87,14 +76,28 @@ export async function GET(req: NextRequest) {
                     if (logs && logs.length > 0) {
                         console.log('[STT Status] Found result in DB callback logs');
                         finalData = logs[0].metadata;
+                        hasSegments = true;
                     }
                 }
 
-                return NextResponse.json({
-                    done: true,
-                    text: finalData.text,
-                    details: finalData,
-                });
+                if (hasSegments) {
+                    return NextResponse.json({
+                        done: true,
+                        text: finalData.text,
+                        details: finalData,
+                    });
+                } else {
+                    // Clova finished but callback hasn't arrived yet.
+                    // Tell client to keep polling.
+                    await supabase.from('system_logs').insert({
+                        session_id: 'debug-clova-status-waiting',
+                        source: 'api/stt/status',
+                        level: 'info',
+                        message: 'Clova completed but waiting for callback data',
+                        metadata: { token: name }
+                    });
+                    return NextResponse.json({ done: false });
+                }
             } else if (data.result === 'FAILED') {
                 await supabase.from('system_logs').insert({
                     session_id: 'debug-clova-status-fail',
